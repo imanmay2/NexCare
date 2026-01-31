@@ -6,7 +6,9 @@ import (
 	"os"
 	"nexcare/backend/config"
 	env "github.com/joho/godotenv"
-
+	"github.com/gin-contrib/cors"
+	"time"
+	router "nexcare/backend/router"
 )
 
 func main() {
@@ -19,10 +21,16 @@ func main() {
 
 	app:=gin.Default()
 
-	app.GET("/",func(ctx *gin.Context){
-		ctx.IndentedJSON(200,gin.H{"Message":"Welcome to NexCare","success":"true"})
-	})
+	app.Use(cors.New(cors.Config{
+    AllowOrigins:     []string{"https://localhost:5173"},
+    AllowMethods:     []string{"PUT", "PATCH","GET","POST","DELETE"},
+    AllowHeaders:     []string{"Origin"},
+    ExposeHeaders:    []string{"Content-Length"},
+    AllowCredentials: true,
+    MaxAge: 12 * time.Hour,
+  }))
 
+  router.RegisterUserRoute(app)
 
 
 	app.Run(":8090");
