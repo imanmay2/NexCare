@@ -36,7 +36,7 @@ interface User {
   id: string;
   name: string;
   role: "patient" | "doctor" | "pharmacy";
-  phone: string;
+  email: string;
   language: "en" | "hi" | "pa";
 }
 
@@ -62,7 +62,7 @@ export default function App() {
 
   const translations = {
     en: {
-      title: "Nabha Telemedicine Platform",
+      title: "NexCare Telemedicine Platform",
       subtitle:
         "Connecting rural communities to quality healthcare",
       loginPrompt: "Welcome to Healthcare Access",
@@ -203,7 +203,7 @@ export default function App() {
             <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full mb-4">
               <Heart className="h-5 w-5" />
               <span className="font-medium">
-                Nabha Telemedicine Platform
+                NexCare Telemedicine Platform
               </span>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -442,7 +442,7 @@ export default function App() {
             <div className="flex items-center justify-center space-x-2 mb-4">
               <Heart className="h-6 w-6 text-red-500" />
               <span className="text-lg font-semibold">
-                Nabha Telemedicine Platform
+                NexCare Telemedicine Platform
               </span>
             </div>
             <p className="text-gray-400 mb-4">

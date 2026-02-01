@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -6,11 +6,12 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { User, Stethoscope, Building2, Phone, Shield } from 'lucide-react';
 
+
 interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -21,17 +22,23 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onLogin, language }: LoginScreenProps) {
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<'patient' | 'doctor' | 'pharmacy'>('patient');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [otp, setOtp] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
+
+
+
 
   const translations = {
     en: {
       title: "Access Healthcare Platform",
       subtitle: "Enter your details to continue",
       name: "Full Name",
-      phone: "Phone Number",
+      email: "Email Address",
       role: "Select Role",
       patient: "Patient",
       doctor: "Doctor",
@@ -47,7 +54,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
       title: "स्वास्थ्य प्लेटफॉर्म तक पहुंच",
       subtitle: "जारी रखने के लिए अपना विवरण दर्ज करें",
       name: "पूरा नाम",
-      phone: "फोन नंबर",
+      email: "ईमेल एड्रेस",
       role: "भूमिका चुनें",
       patient: "मरीज़",
       doctor: "डॉक्टर",
@@ -63,7 +70,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
       title: "ਸਿਹਤ ਪਲੈਟਫਾਰਮ ਤੱਕ ਪਹੁੰਚ",
       subtitle: "ਜਾਰੀ ਰੱਖਣ ਲਈ ਆਪਣੇ ਵੇਰਵੇ ਦਾਖਲ ਕਰੋ",
       name: "ਪੂਰਾ ਨਾਮ",
-      phone: "ਫੋਨ ਨੰਬਰ",
+      email: "ਈਮੇਲ ਐਡਰੇਸ",
       role: "ਭੂਮਿਕਾ ਚੁਣੋ",
       patient: "ਮਰੀਜ਼",
       doctor: "ਡਾਕਟਰ",
@@ -79,86 +86,54 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
 
   const t = translations[language];
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const user: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: name || `Demo ${t[role]}`,
-      role,
-      phone: phone || '+91-XXXX-XXXX',
-      language
-    };
-
-    onLogin(user);
-    setIsLoading(false);
-  };
-
-  const handleDemoLogin = (demoRole: 'patient' | 'doctor' | 'pharmacy') => {
-    const demoUsers = {
-      patient: { name: 'Amar Singh', phone: '+91-98765-43210' },
-      doctor: { name: 'Dr. Priya Sharma', phone: '+91-98765-43211' },
-      pharmacy: { name: 'Nabha Medical Store', phone: '+91-98765-43212' }
-    };
-
-    const user: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: demoUsers[demoRole].name,
-      role: demoRole,
-      phone: demoUsers[demoRole].phone,
-      language
-    };
-
-    onLogin(user);
-  };
-
   const roleIcons = {
     patient: User,
     doctor: Stethoscope,
     pharmacy: Building2
   };
 
+  const getOTP = async (e: any) => {
+    e.preventDefault();
+    try {
+      // Get OTP request
+      setIsOtpSent(true);
+    } catch (error) {
+      console.error("Error during signInWithPhoneNumber", error);
+    }
+
+  }
+
+  const validateOTP = () => {
+    // Validate OTP request
+  }
+
   return (
     <div className="space-y-6">
-      {/* Demo Login Options */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">{t.demo}</h3>
-        <div className="grid grid-cols-1 gap-2">
-          {(['patient', 'doctor', 'pharmacy'] as const).map((demoRole) => {
-            const Icon = roleIcons[demoRole];
-            return (
-              <Button
-                key={demoRole}
-                variant="outline"
-                onClick={() => handleDemoLogin(demoRole)}
-                className="justify-start h-auto p-3"
-              >
-                <Icon className="h-4 w-4 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">{t[demoRole]}</div>
-                  <div className="text-xs text-gray-500">{t[`${demoRole}Desc` as keyof typeof t]}</div>
-                </div>
-              </Button>
-            );
-          })}
-        </div>
-      </div>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+      <div className="space-y-4">
+        {/* Horizontal Button Container */}
+        <div className="flex flex-row gap-3">
+          <Button
+            variant={isLogin ? "default" : "outline"}
+            className="flex-1"
+            onClick={() => { setIsOtpSent(false); setIsLogin(true) }}
+          >
+            Login
+          </Button>
+
+          <Button
+            variant={!isLogin ? "default" : "outline"}
+            className="flex-1"
+            onClick={() => { setIsOtpSent(false); setIsLogin(false) }}
+          >
+            Sign Up
+          </Button>
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500">Or register new account</span>
-        </div>
+
       </div>
 
       {/* Registration Form */}
-      <form onSubmit={handleLogin} className="space-y-4">
+      {!isLogin && <form onSubmit={(e: any) => getOTP(e)} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">{t.name}</Label>
           <Input
@@ -171,15 +146,15 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">{t.phone}</Label>
+          <Label htmlFor="email">{t.email}</Label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91-XXXXX-XXXXX"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
               className="pl-10"
             />
           </div>
@@ -187,7 +162,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
 
         <div className="space-y-3">
           <Label>{t.role}</Label>
-          <RadioGroup value={role} onValueChange={(value) => setRole(value as typeof role)}>
+          <RadioGroup value={role} onValueChange={(value: any) => setRole(value as typeof role)}>
             {(['patient', 'doctor', 'pharmacy'] as const).map((roleOption) => {
               const Icon = roleIcons[roleOption];
               return (
@@ -204,7 +179,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
           </RadioGroup>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full" disabled={isLoading} onClick={getOTP}>
           {isLoading ? 'Loading...' : t.login}
         </Button>
 
@@ -212,7 +187,73 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
           <Shield className="h-3 w-3" />
           <span>{t.privacy}</span>
         </div>
-      </form>
+      </form>}
+
+      {/* Login */}
+      {isLogin && <div>
+        <div className="space-y-2">
+          <Label htmlFor="email">{t.email}</Label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Get OTP Button */}
+        <div className="flex w-full">
+          <Button className="ml-auto mt-4" onClick={(e: any) => getOTP(e)}>
+            Get OTP
+          </Button>
+        </div>
+      </div>}
+
+      {/* OTP input */}
+      {isOtpSent && (
+        <div className="mt-4 space-y-3">
+          <Label htmlFor="otp" className="text-center block">Enter OTP</Label>
+          <div className="flex justify-center gap-2">
+            {[0, 1, 2, 3, 4, 5].map((index) => (
+              <input
+                key={index}
+                id={`otp-${index}`}
+                type="text"
+                maxLength={1}
+                value={otp[index] || ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^[0-9]$/.test(val) || val === "") {
+                    const newOtp = otp.split("");
+                    newOtp[index] = val;
+                    setOtp(newOtp.join(""));
+
+                    // Move focus to next box
+                    if (val !== "" && index < 5) {
+                      document.getElementById(`otp-${index + 1}`)?.focus();
+                    }
+                    if (index === 5) {
+                      validateOTP();
+                    }
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Move focus back on backspace
+                  if (e.key === "Backspace" && !otp[index] && index > 0) {
+                    document.getElementById(`otp-${index - 1}`)?.focus();
+                  }
+                }}
+                className="w-12 h-12 text-center text-lg font-bold border rounded-md focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-white"
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

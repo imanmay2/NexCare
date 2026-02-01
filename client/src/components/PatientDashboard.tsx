@@ -6,13 +6,13 @@ import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Calendar, 
-  Video, 
-  FileText, 
-  MapPin, 
-  Clock, 
-  Phone, 
+import {
+  Calendar,
+  Video,
+  FileText,
+  MapPin,
+  Clock,
+  Phone,
   Heart,
   AlertCircle,
   CheckCircle,
@@ -35,7 +35,7 @@ interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -215,10 +215,10 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
               </Avatar>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{t.welcome}, {user.name}</h1>
-                <p className="text-sm text-gray-600">{user.phone}</p>
+                <p className="text-sm text-gray-600">{user.email}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {/* Connection Status */}
               <div className="flex items-center space-x-2">
@@ -232,7 +232,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
                   <div>{t.lastSync}: {lastSync.toLocaleTimeString()}</div>
                 </div>
               </div>
-              
+
               <Button variant="outline" size="sm" onClick={onLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -265,8 +265,8 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
           <TabsContent value="overview" className="space-y-6">
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" 
-                    onClick={handleNewConsultation}>
+              <Card className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={handleNewConsultation}>
                 <CardContent className="p-6 text-center">
                   <Video className="h-8 w-8 text-blue-600 mx-auto mb-3" />
                   <h3 className="font-semibold mb-2">{t.newConsultation}</h3>
@@ -283,7 +283,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
               </Card>
 
               <Card className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => document.querySelector('[value="symptoms"]')?.click()}>
+                onClick={() => (document.querySelector('[value="symptoms"]') as HTMLElement)?.click()}>
                 <CardContent className="p-6 text-center">
                   <Activity className="h-8 w-8 text-green-600 mx-auto mb-3" />
                   <h3 className="font-semibold mb-2">{t.symptoms}</h3>
@@ -358,9 +358,9 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
           </TabsContent>
 
           <TabsContent value="appointments">
-            <AppointmentBooking 
-              user={user} 
-              language={language} 
+            <AppointmentBooking
+              user={user}
+              language={language}
               isOnline={isOnline}
               appointments={appointments}
               setAppointments={setAppointments}

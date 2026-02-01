@@ -5,12 +5,12 @@ import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { Progress } from './ui/progress';
-import { 
-  Mic, 
-  MicOff, 
-  Send, 
-  AlertTriangle, 
-  Info, 
+import {
+  Mic,
+  MicOff,
+  Send,
+  AlertTriangle,
+  Info,
   CheckCircle,
   Clock,
   User,
@@ -26,7 +26,7 @@ interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -159,14 +159,14 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
   // Mock AI analysis
   const analyzeSymptoms = async () => {
     setIsAnalyzing(true);
-    
+
     // Simulate AI processing
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     // Mock analysis based on keywords
     const symptomsLower = symptoms.toLowerCase();
     let mockResult: SymptomResult;
-    
+
     if (symptomsLower.includes('chest pain') || symptomsLower.includes('breathing')) {
       mockResult = {
         assessment: "Possible respiratory or cardiac concern",
@@ -216,7 +216,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
         shouldConsult: false
       };
     }
-    
+
     setResult(mockResult);
     setIsAnalyzing(false);
   };
@@ -284,7 +284,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                 placeholder={t.placeholder}
                 className="min-h-32"
               />
-              
+
               <div className="flex items-center space-x-2">
                 <Button
                   variant={isListening ? "destructive" : "outline"}
@@ -304,13 +304,13 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                     </>
                   )}
                 </Button>
-                
+
                 {!isOnline && (
                   <span className="text-xs text-gray-500">(Voice input requires internet)</span>
                 )}
               </div>
 
-              <Button 
+              <Button
                 onClick={analyzeSymptoms}
                 disabled={!symptoms.trim() || isAnalyzing}
                 className="w-full"
@@ -369,7 +369,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                     <ellipse cx="112" cy="280" rx="12" ry="80" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1" />
                   </svg>
                 </div>
-                
+
                 {/* Clickable body parts */}
                 {bodyParts.map((part) => {
                   const Icon = part.icon;
@@ -380,11 +380,10 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                         setSelectedBodyPart(part.id);
                         setSymptoms(prev => prev + ` [Pain/discomfort in ${part.name.toLowerCase()}] `);
                       }}
-                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 p-3 rounded-full border-2 transition-all hover:scale-110 ${
-                        selectedBodyPart === part.id 
+                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 p-3 rounded-full border-2 transition-all hover:scale-110 ${selectedBodyPart === part.id
                           ? 'bg-red-100 border-red-500 text-red-700 shadow-lg'
                           : 'bg-white border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-                      }`}
+                        }`}
                       style={{ top: part.position.top, left: part.position.left }}
                       title={`Click if you have pain in ${part.name.toLowerCase()}`}
                     >
@@ -392,7 +391,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                     </button>
                   );
                 })}
-                
+
                 {/* Pain indicators */}
                 {selectedBodyPart && (
                   <div className="absolute top-2 right-2">
@@ -402,7 +401,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                   </div>
                 )}
               </div>
-              
+
               {selectedBodyPart && (
                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-center space-x-2">
@@ -416,7 +415,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                   </p>
                 </div>
               )}
-              
+
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs text-blue-600">
                   💡 Tip: Click on the body parts where you feel pain or discomfort. You can select multiple areas.
@@ -487,7 +486,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                     {t.callEmergency}
                   </Button>
                 )}
-                
+
                 {result.shouldConsult && (
                   <Button className="w-full">
                     <Clock className="h-4 w-4 mr-2" />

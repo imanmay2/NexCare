@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  MapPin, 
-  Phone, 
-  Clock, 
+import {
+  MapPin,
+  Phone,
+  Clock,
   Search,
   Navigation,
   Star,
@@ -25,7 +25,7 @@ interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -343,11 +343,10 @@ export function PharmacyLocator({ user, language, isOnline }: PharmacyLocatorPro
                 <div
                   key={pharmacy.id}
                   onClick={() => setSelectedPharmacy(pharmacy)}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedPharmacy?.id === pharmacy.id 
-                      ? 'border-blue-500 bg-blue-50' 
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedPharmacy?.id === pharmacy.id
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
@@ -507,8 +506,8 @@ export function PharmacyLocator({ user, language, isOnline }: PharmacyLocatorPro
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ImageWithFallback 
-            src="https://images.unsplash.com/photo-1597121798359-e9ee76aa0478?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaGFybWFjeSUyMG1lZGljaW5lJTIwc2hlbHZlc3xlbnwxfHx8fDE3NTgwMDMxNDV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral" 
+          <ImageWithFallback
+            src="https://images.unsplash.com/photo-1597121798359-e9ee76aa0478?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaGFybWFjeSUyMG1lZGljaW5lJTIwc2hlbHZlc3xlbnwxfHx8fDE3NTgwMDMxNDV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
             alt="Pharmacy with medicine shelves"
             className="w-full h-48 object-cover rounded-lg"
           />

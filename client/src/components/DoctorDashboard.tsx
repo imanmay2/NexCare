@@ -5,10 +5,10 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Stethoscope, 
-  Calendar, 
-  Users, 
+import {
+  Stethoscope,
+  Calendar,
+  Users,
   Clock,
   Video,
   Phone,
@@ -26,7 +26,7 @@ interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -208,13 +208,13 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
                 <p className="text-sm text-gray-600">General Medicine • Nabha Civil Hospital</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="text-right text-sm">
                 <div className="text-gray-600">Today: Dec 17, 2024</div>
                 <div className="text-gray-500">8 consultations scheduled</div>
               </div>
-              
+
               <Button variant="outline" size="sm" onClick={onLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -243,7 +243,7 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
               <div className="text-sm text-gray-600">{t.totalPatients}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6 text-center">
               <Clock className="h-8 w-8 text-orange-600 mx-auto mb-2" />
@@ -251,7 +251,7 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
               <div className="text-sm text-gray-600">{t.pendingConsults}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6 text-center">
               <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
@@ -259,7 +259,7 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
               <div className="text-sm text-gray-600">{t.completedToday}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6 text-center">
               <Stethoscope className="h-8 w-8 text-purple-600 mx-auto mb-2" />
@@ -305,7 +305,7 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
                               </p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center space-x-2">
                             <Icon className="h-5 w-5 text-blue-600" />
                             <Badge className={getStatusColor(consultation.status)}>
@@ -333,12 +333,12 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
                               {t.startConsultation}
                             </Button>
                           )}
-                          
+
                           <Button variant="outline" size="sm" className="flex-1">
                             <FileText className="h-4 w-4 mr-2" />
                             {t.viewHistory}
                           </Button>
-                          
+
                           <Button variant="outline" size="sm" className="flex-1">
                             <Pill className="h-4 w-4 mr-2" />
                             {t.writePrescription}
