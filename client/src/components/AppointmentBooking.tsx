@@ -6,11 +6,11 @@ import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  Video, 
-  Phone, 
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Video,
+  Phone,
   MapPin,
   User,
   Stethoscope,
@@ -24,7 +24,7 @@ interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -174,7 +174,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
       languages: ['English', 'Hindi', 'Punjabi']
     },
     {
-      id: '2', 
+      id: '2',
       name: 'Dr. Rajesh Kumar',
       specialty: 'Pediatrics',
       rating: 4.7,
@@ -280,11 +280,10 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                   <div
                     key={doctor.id}
                     onClick={() => setSelectedDoctor(doctor.id)}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedDoctor === doctor.id 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedDoctor === doctor.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
@@ -327,7 +326,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  disabled={(date) => date < new Date()}
+                  disabled={(date: Date) => date < new Date()}
                   className="rounded-md border"
                 />
               </CardContent>
@@ -343,7 +342,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                     {timeSlots.map((time) => {
                       const doctor = doctors.find(d => d.id === selectedDoctor);
                       const isAvailable = doctor?.availability.includes(time);
-                      
+
                       return (
                         <Button
                           key={time}
@@ -373,17 +372,16 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-3">
-                  {(['video', 'audio', 'in-person'] as const).map((type) => {
+                  {(['video', 'audio', 'inPerson'] as const).map((type) => {
                     const Icon = getAppointmentIcon(type);
                     return (
                       <button
                         key={type}
-                        onClick={() => setConsultationType(type)}
-                        className={`p-4 border rounded-lg text-left transition-colors ${
-                          consultationType === type 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        onClick={() => setConsultationType(type === 'inPerson' ? 'in-person' : type)}
+                        className={`p-4 border rounded-lg text-left transition-colors ${consultationType === type
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <div className="flex items-center space-x-3">
                           <Icon className="h-5 w-5 text-blue-600" />
@@ -392,7 +390,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                             <div className="text-xs text-gray-500">
                               {type === 'video' && 'High quality video consultation'}
                               {type === 'audio' && 'Audio-only call (low bandwidth)'}
-                              {type === 'in-person' && 'Visit Nabha Civil Hospital'}
+                              {type === 'inPerson' && 'Visit Nabha Civil Hospital'}
                             </div>
                           </div>
                         </div>
@@ -414,7 +412,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                   placeholder="Describe your symptoms, medical history, and reason for consultation..."
                   className="min-h-32"
                 />
-                
+
                 <Button
                   onClick={handleBookAppointment}
                   disabled={!symptoms.trim() || isBooking}
@@ -485,7 +483,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                             {appointment.date} at {appointment.time}
                           </p>
                           <Badge className={getAppointmentTypeColor(appointment.type)}>
-                            {t[appointment.type]}
+                            {t[appointment.type === 'in-person' ? 'inPerson' : appointment.type]}
                           </Badge>
                         </div>
                       </div>

@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  FileText, 
-  Download, 
-  Share2, 
+import {
+  FileText,
+  Download,
+  Share2,
   Calendar,
   Pill,
   Activity,
@@ -25,7 +25,7 @@ interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -314,9 +314,9 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
                   Offline
                 </Badge>
               )}
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleSync}
                 disabled={!isOnline || syncStatus === 'syncing'}
               >
@@ -566,9 +566,9 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
                             </div>
                             <div className="flex items-center space-x-2">
                               <span className="font-medium">{result.value}</span>
-                              <Badge 
-                                className={result.status === 'normal' 
-                                  ? 'bg-green-100 text-green-800' 
+                              <Badge
+                                className={result.status === 'normal'
+                                  ? 'bg-green-100 text-green-800'
                                   : 'bg-red-100 text-red-800'
                                 }
                               >
