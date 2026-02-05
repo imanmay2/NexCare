@@ -5,9 +5,10 @@ import (
 	"log"
 	conn "nexcare/backend/config"
 	"nexcare/backend/model"
-
+	// "nexcare/backend/util"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	
 )
 
 func PostUser(ctx *gin.Context){
@@ -21,6 +22,9 @@ func PostUser(ctx *gin.Context){
 	log.Printf("Data from post request %v %v %v\n",user.Name,user.Email,user.Role)
 
 	//Generate OTP
+	// act_OTP=util.GenerateOTP()
+
+
 
 	//Store in Redis Session with user and generated OTP
 

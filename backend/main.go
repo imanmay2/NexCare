@@ -7,6 +7,7 @@ import (
 	"nexcare/backend/routes"
 	gin "github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	
 )
 
 func main() {
@@ -18,6 +19,7 @@ func main() {
 		log.Fatal("Error in loading the env's");
 	}
 	config.ConnectDB()
+	config.ConnectRedis()
 	app:=gin.Default()
 
 	routes.RegisterUserRoutes(app)
