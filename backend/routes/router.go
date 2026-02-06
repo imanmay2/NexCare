@@ -7,5 +7,6 @@ import (
 
 func RegisterUserRoutes(router *gin.Engine){
 	userGroup:=router.Group("/users")
-	userGroup.POST("/",controller.PostUser);
+	userGroup.POST("/",controller.PostUser)
+	userGroup.POST("/otp",controller.Generate_StoreOTP)
 }

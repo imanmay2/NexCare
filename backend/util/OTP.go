@@ -23,10 +23,11 @@ func StoreRedisOTP(user_id string,otp string){
 		return
 	}
 
-	log.Println("OTP storedin Redis sucessfully")
+	redis_OTP,err:=conn.RedisClient.Get(context.Background(),user_id).Result()
+	log.Println("OTP storedin Redis sucessfully--->"+redis_OTP)
 }
 
-func VerifyOTP(user_id string,otp int) bool{
+func VerifyOTP(user_id string,otp string) bool{
 	// verify OTP 
 	redis_OTP,err:=conn.RedisClient.Get(context.Background(),user_id).Result()
 	if err==redis.Nil{
@@ -38,7 +39,7 @@ func VerifyOTP(user_id string,otp int) bool{
 		return false
 	}
 
-	if(strconv.Itoa(otp)==redis_OTP){
+	if(otp==redis_OTP){
 		log.Printf("OTP Verified")
 		return true
 	}
