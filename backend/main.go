@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"nexcare/backend/config"
-	"os"
+	// "os"
 	"nexcare/backend/routes"
 	gin "github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -14,7 +14,7 @@ func main() {
 	log.Println("Welcome to NexCare")
 
 	err:=godotenv.Load()
-	log.Println(os.Getenv("DB_URL"))
+	// log.Println(os.Getenv("DB_URL"))
 	if err!=nil{
 		log.Fatal("Error in loading the env's");
 	}
