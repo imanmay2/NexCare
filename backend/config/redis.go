@@ -3,7 +3,9 @@ package config
 import (
 	"context"
 	"log"
+	"os"
 
+	
 	"github.com/redis/go-redis/v9"
 )
 
@@ -11,10 +13,11 @@ var Ctx = context.Background()
 var RedisClient *redis.Client
 
 func ConnectRedis() {
-
+	
 	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
+		Addr:     os.Getenv("REDIS_URL"),
+		Username: "default",
+		Password: os.Getenv("REDIS_PASS"),
 		DB:       0,
 	})
 
