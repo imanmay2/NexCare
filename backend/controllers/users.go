@@ -68,4 +68,6 @@ func Generate_StoreOTP(ctx *gin.Context) {
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
+
+	ctx.IndentedJSON(200, gin.H{"Message": "OTP sent sucessfully", "success": true})
 }

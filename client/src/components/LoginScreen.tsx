@@ -5,7 +5,7 @@ import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { User, Stethoscope, Building2, Phone, Shield } from 'lucide-react';
-import { useError } from './ui/Error';
+import { useError } from './ui/Toast';
 
 
 interface User {
@@ -32,7 +32,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
 
-  const { showError } = useError();
+  const { showToast } = useError();
 
 
 
@@ -113,11 +113,11 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
         setIsOtpSent(true);
       } else {
         setIsLoading(false);
-        showError(responseData.Message, responseData.success)
+        showToast(responseData.Message, responseData.success)
       }
     } catch (error) {
       setIsLoading(false);
-      showError(`Error during OTP request: ${error}`, false);
+      showToast(`Error during OTP request: ${error}`, false);
     }
 
   }
@@ -141,7 +141,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
       })
       const responseData = await response.json();
       if (response.ok) {
-        setIsLoading(false)
+        setIsLoading(false);
         const user: User = {
           id: '1',
           name: name,
@@ -150,13 +150,12 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
           language: language
         };
         onLogin(user);
-      } else {
-        setIsLoading(false);
-        showError(responseData.Message, responseData.success);
       }
+      setIsLoading(false);
+      showToast(responseData.Message, responseData.success);
     } catch (error) {
       setIsLoading(false)
-      showError(`Error occured: ${error}`, false);
+      showToast(`Error occured: ${error}`, false);
     }
   }
 
