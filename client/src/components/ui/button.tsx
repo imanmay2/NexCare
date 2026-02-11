@@ -1,5 +1,7 @@
 import * as React from "react";
+// @ts-ignore
 import { Slot } from "@radix-ui/react-slot@1.1.2";
+// @ts-ignore
 import { cva, type VariantProps } from "class-variance-authority@0.7.1";
 
 import { cn } from "./utils";

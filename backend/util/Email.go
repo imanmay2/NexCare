@@ -21,7 +21,7 @@ func SendEmail(to string, otp string) error {
 	m.SetHeader("Subject", "Your OTP for NexCare authentication")
 	m.SetBody("text/html", "Your OTP for NexCare Authentication is: "+otp)
 
-	d := gomail.NewDialer("smtp.google.com", 587, "code.rx.official.channel@gmail.com", os.Getenv("GOOGLE_SMTP_APP_PASSWORD"))
+	d := gomail.NewDialer("smtp.gmail.com", 587, "code.rx.official.channel@gmail.com", os.Getenv("GOOGLE_SMTP_APP_PASSWORD"))
 
 	if err := d.DialAndSend(m); err != nil {
 		return err

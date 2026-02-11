@@ -4,6 +4,7 @@ import { DoctorDashboard } from "./components/DoctorDashboard";
 import { PharmacyDashboard } from "./components/PharmacyDashboard";
 import { LoginScreen } from "./components/LoginScreen";
 import { Button } from "./components/ui/button";
+import { LoadingOverlay } from "./components/ui/LoadingScreenOverlay";
 import {
   Tabs,
   TabsContent,
@@ -41,11 +42,12 @@ interface User {
 }
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>();
   const [language, setLanguage] = useState<"en" | "hi" | "pa">(
     "en",
   );
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -95,6 +97,7 @@ export default function App() {
 
   const t = translations[language];
 
+
   if (user) {
     switch (user.role) {
       case "patient":
@@ -130,6 +133,8 @@ export default function App() {
             onLogin={setUser}
             language={language}
             setLanguage={setLanguage}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
           />
         );
     }
@@ -137,6 +142,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      {isLoading && <LoadingOverlay />}
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -220,6 +226,8 @@ export default function App() {
                 onLogin={setUser}
                 language={language}
                 setLanguage={setLanguage}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
               />
             </CardContent>
           </Card>

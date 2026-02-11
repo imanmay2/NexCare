@@ -54,6 +54,8 @@ func Generate_StoreOTP(ctx *gin.Context) {
 
 	email_id := user.Email
 
+	//TODO: Check if the email exists in the users database for proceesing to login else show "${email} isn't registered".
+
 	//generate OTP
 	actualOTP := util.GenerateOTP()
 
