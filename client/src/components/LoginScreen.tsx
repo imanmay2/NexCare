@@ -119,7 +119,6 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
       setIsLoading(false);
       showToast(`Error during OTP request: ${error}`, false);
     }
-
   }
 
   const validateOTP = async (otp_: string) => {
@@ -144,8 +143,8 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
         setIsLoading(false);
         const user: User = {
           id: '1',
-          name: name,
-          role: role,
+          name: responseData.name,
+          role: responseData.role,
           email: email,
           language: language
         };
@@ -193,7 +192,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your full name"
+            placeholder="Enter your full name" required
           />
         </div>
 
@@ -207,7 +206,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email address"
-              className="pl-10"
+              className="pl-10" required
             />
           </div>
         </div>
@@ -289,7 +288,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
                     if (val !== "" && index < 5) {
                       document.getElementById(`otp-${index + 1}`)?.focus();
                     }
-                    if (index === 5) {
+                    if (index === 5 && newOtp.join("").length==6) {
                       validateOTP(newOtp.join(""));
                     }
                   }
