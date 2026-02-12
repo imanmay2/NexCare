@@ -111,6 +111,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
       if (response.ok) {
         setIsLoading(false);
         setIsOtpSent(true);
+        showToast(responseData.Message, responseData.success)
       } else {
         setIsLoading(false);
         showToast(responseData.Message, responseData.success)
@@ -142,6 +143,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
       const responseData = await response.json();
       if (response.ok) {
         setIsLoading(false);
+        showToast(responseData.Message, responseData.success);
         const user: User = {
           id: '1',
           name: name,
