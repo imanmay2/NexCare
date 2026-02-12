@@ -95,8 +95,18 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
     pharmacy: Building2
   };
 
+  function isValid(email: string): Boolean {
+    if (email.includes("@") && email.split("@").length == 2 && email.length != 0 && email.split("@")[1].includes("."))
+      return true
+    return false
+  }
+
   const getOTP = async (e: any) => {
     e.preventDefault();
+    if (!isValid(email) && (!isLogin ? name.length == 0 : true)) {
+      showToast("Enter details properly", false);
+      return
+    }
     try {
       setIsLoading(true)
       // Get OTP request
@@ -142,7 +152,8 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
       const responseData = await response.json();
       if (response.ok) {
         setIsLoading(false);
-        showToast(responseData.Message, responseData.success);
+        if (responseData.Message)
+          showToast(responseData.Message, responseData.success);
         const user: User = {
           id: '1',
           name: responseData.name,
@@ -151,9 +162,11 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
           language: language
         };
         onLogin(user);
+      } else {
+        console.log("Entered here")
+        setIsLoading(false);
+        showToast(responseData.Message, responseData.success);
       }
-      setIsLoading(false);
-      showToast(responseData.Message, responseData.success);
     } catch (error) {
       setIsLoading(false)
       showToast(`Error occured: ${error}`, false);
@@ -254,7 +267,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email address"
-              className="pl-10"
+              className="pl-10" required
             />
           </div>
         </div>
@@ -290,7 +303,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
                     if (val !== "" && index < 5) {
                       document.getElementById(`otp-${index + 1}`)?.focus();
                     }
-                    if (index === 5 && newOtp.join("").length==6) {
+                    if (index === 5 && newOtp.join("").length == 6) {
                       validateOTP(newOtp.join(""));
                     }
                   }
