@@ -21,7 +21,8 @@ func PostUser(ctx *gin.Context) {
 	}
 	log.Printf("Data from post request %v %v %v %v\n", user.Name, user.Email, user.Role, user.Otp)
 
-	if util.VerifyOTP(user.Email, user.Otp) {
+	if (util.VerifyOTP(user.Email, user.Otp)  && !user.IsLogin){
+		//signup
 
 		query := "insert into users values($1,$2,$3,$4)"
 		_, err = conn.DB.Exec(context.Background(), query, uuid.New().String(), user.Name, user.Role, user.Email)
@@ -33,16 +34,17 @@ func PostUser(ctx *gin.Context) {
 		//generate the JWT.
 
 		//Move ahead.
+	}else if(util.VerifyOTP(user.Email, user.Otp)  && user.IsLogin){
+		//send JWT after 
+		ctx.IndentedJSON(200,gin.H{"name":"Manmay","role":"patient"})
+		return 
 	} else {
 		ctx.IndentedJSON(401, gin.H{"Message": "Incorrect OTP entered.", "success": false})
 		return
 	}
 }
 
-func GetUser(ctx *gin.Context) {
-	//returns userdata from the db.
 
-}
 
 func Generate_StoreOTP(ctx *gin.Context) {
 	var user model.UserOtp
@@ -53,21 +55,41 @@ func Generate_StoreOTP(ctx *gin.Context) {
 	}
 
 	email_id := user.Email
+	isLogin := user.IsLogin
 
 	//TODO: Check if the email exists in the users database for proceesing to login else show "${email} isn't registered".
-
-	//generate OTP
-	actualOTP := util.GenerateOTP()
-
-	//Store OTP in Redis
-	util.StoreRedisOTP(email_id, actualOTP)
-
-	//Send the otp by the email
-	err = util.SendEmail(email_id, actualOTP)
+	q := " select id,name,role,email from users where email=$1 "
+	rows, err := conn.DB.Query(context.Background(), q, email_id)
 	if err != nil {
-		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		ctx.IndentedJSON(401, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
 
-	ctx.IndentedJSON(200, gin.H{"Message": "OTP sent sucessfully", "success": true})
+	found := false
+	for rows.Next() {
+		found = true
+		log.Printf("---->found : %v\n",found)
+	}
+
+	if found {
+		if isLogin {
+			log.Printf("--> User logging in...")
+			util.Create_Send_OTP(email_id, ctx)
+			return
+		} else {
+			//user can't signup as already data exists
+			ctx.IndentedJSON(401, gin.H{"Message": "Account already exists", "success": false})
+			return
+
+		}
+	} else {
+		if isLogin {
+			//user not found , so no login
+			ctx.IndentedJSON(401, gin.H{"Message": "Account not found", "success": false})
+			return
+
+		} else {
+			util.Create_Send_OTP(email_id, ctx)
+		}
+	}
 }

@@ -5,8 +5,11 @@ import (
 	"log"
 	"math/rand"
 	conn "nexcare/backend/config"
+	
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 )
 func GenerateOTP() string {
@@ -44,4 +47,19 @@ func VerifyOTP(user_id string,otp string) bool{
 		return true
 	}
 	return false
+}
+
+func Create_Send_OTP(email_id string,ctx *gin.Context){
+			//generate OTP
+			actualOTP := GenerateOTP()
+			//Store OTP in Redis
+			StoreRedisOTP(email_id, actualOTP)
+			//Send the otp by the email
+			err := SendEmail(email_id, actualOTP)
+			if err != nil {
+				ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+				return
+			}
+			ctx.IndentedJSON(200, gin.H{"Message": "OTP sent sucessfully", "success": true})
+			
 }
