@@ -5,6 +5,7 @@ import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { User, Stethoscope, Building2, Phone, Shield } from 'lucide-react';
+import { useError } from './ui/Toast';
 
 
 interface User {
@@ -19,17 +20,19 @@ interface LoginScreenProps {
   onLogin: (user: User) => void;
   language: 'en' | 'hi' | 'pa';
   setLanguage: (lang: 'en' | 'hi' | 'pa') => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
 }
 
-export function LoginScreen({ onLogin, language }: LoginScreenProps) {
+export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLoading }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<'patient' | 'doctor' | 'pharmacy'>('patient');
-  const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
 
+  const { showToast } = useError();
 
 
 
@@ -95,16 +98,65 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
   const getOTP = async (e: any) => {
     e.preventDefault();
     try {
+      setIsLoading(true)
       // Get OTP request
-      setIsOtpSent(true);
+      const response = await fetch('http://localhost:8090/users/otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email, isLogin: isLogin })
+      })
+      const responseData = await response.json();
+      if (response.ok) {
+        setIsLoading(false);
+        setIsOtpSent(true);
+      } else {
+        setIsLoading(false);
+        showToast(responseData.Message, responseData.success)
+      }
     } catch (error) {
-      console.error("Error during signInWithPhoneNumber", error);
+      setIsLoading(false);
+      showToast(`Error during OTP request: ${error}`, false);
     }
 
   }
 
-  const validateOTP = () => {
+  const validateOTP = async (otp_: string) => {
     // Validate OTP request
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8090/users/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email,
+          name: name || null,
+          role: role || null,
+          otp: otp_,
+          isLogin: isLogin
+        })
+      })
+      const responseData = await response.json();
+      if (response.ok) {
+        setIsLoading(false);
+        const user: User = {
+          id: '1',
+          name: name,
+          role: role,
+          email: email,
+          language: language
+        };
+        onLogin(user);
+      }
+      setIsLoading(false);
+      showToast(responseData.Message, responseData.success);
+    } catch (error) {
+      setIsLoading(false)
+      showToast(`Error occured: ${error}`, false);
+    }
   }
 
   return (
@@ -208,7 +260,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
 
         {/* Get OTP Button */}
         <div className="flex w-full">
-          <Button className="ml-auto mt-4" onClick={(e: any) => getOTP(e)}>
+          <Button className="ml-auto mt-4" onClick={(e: any) => getOTP(e)} disabled={isLoading || isOtpSent}>
             Get OTP
           </Button>
         </div>
@@ -231,14 +283,14 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                   if (/^[0-9]$/.test(val) || val === "") {
                     const newOtp = otp.split("");
                     newOtp[index] = val;
-                    setOtp(newOtp.join(""));
+                    setOtp(newOtp.join(""))
 
                     // Move focus to next box
                     if (val !== "" && index < 5) {
                       document.getElementById(`otp-${index + 1}`)?.focus();
                     }
                     if (index === 5) {
-                      validateOTP();
+                      validateOTP(newOtp.join(""));
                     }
                   }
                 }}

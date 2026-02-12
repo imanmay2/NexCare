@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"log"
 	conn "nexcare/backend/config"
 	"nexcare/backend/model"
 	"nexcare/backend/util"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func PostUser(ctx *gin.Context) {
@@ -33,7 +34,7 @@ func PostUser(ctx *gin.Context) {
 
 		//Move ahead.
 	} else {
-		ctx.IndentedJSON(401,gin.H{"Message":"Incorrect OTP entered.","success":false})
+		ctx.IndentedJSON(401, gin.H{"Message": "Incorrect OTP entered.", "success": false})
 		return
 	}
 }
@@ -53,9 +54,20 @@ func Generate_StoreOTP(ctx *gin.Context) {
 
 	email_id := user.Email
 
+	//TODO: Check if the email exists in the users database for proceesing to login else show "${email} isn't registered".
+
 	//generate OTP
 	actualOTP := util.GenerateOTP()
 
 	//Store OTP in Redis
 	util.StoreRedisOTP(email_id, actualOTP)
+
+	//Send the otp by the email
+	err = util.SendEmail(email_id, actualOTP)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+
+	ctx.IndentedJSON(200, gin.H{"Message": "OTP sent sucessfully", "success": true})
 }
