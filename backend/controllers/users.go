@@ -24,18 +24,33 @@ func PostUser(ctx *gin.Context) {
 	if (util.VerifyOTP(user.Email, user.Otp)  && !user.IsLogin){
 		//signup
 
+
+		//generate the JWT and send it to the frontend.
+		user_id:=uuid.New().String()
+
+		token,err:=util.GenerateJWT(user_id,user.Email) //generated the jwt token after successful OTP verification
+		if err!=nil{
+			ctx.IndentedJSON(500,gin.H{"Message":"Couldn't generate JWT Token","success":false})
+			return
+		}
+
 		query := "insert into users values($1,$2,$3,$4)"
-		_, err = conn.DB.Exec(context.Background(), query, uuid.New().String(), user.Name, user.Role, user.Email)
+		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email)
 		if err != nil {
 			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
 			return
 		}
-		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true})
-		//generate the JWT.
+		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true,"token":token}) //sends the jwt token to frontend
+		
 
-		//Move ahead.
+		
 	}else if(util.VerifyOTP(user.Email, user.Otp)  && user.IsLogin){
-		//send JWT after 
+		// generate JWT token if otp verifies. 
+
+
+		//function to fetch the user_id for passing into generate_JWT token. 
+		
+
 		ctx.IndentedJSON(200,gin.H{"name":"Manmay","role":"patient"})
 		return 
 	} else {
