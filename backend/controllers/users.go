@@ -42,7 +42,10 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
 			return
 		}
-		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true,"token":token,"role":user.Role,"name":user.Name}) //sends the jwt token to frontend
+
+		//setting up the jwt token. 
+		ctx.SetCookie("token",token,3600*24,"/","localhost",false,true)
+		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true,"role":user.Role,"name":user.Name}) //sends the jwt token to frontend
 		
 
 		
@@ -56,7 +59,8 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(500,gin.H{"Message":err.Error(),"success":false})
 		}
 
-		ctx.IndentedJSON(200,gin.H{"name":name,"role":role,"token":token}) //returns the token to the frontend after login. 
+		ctx.SetCookie("token",token,3600*24,"/","localhost",false,true) //setting up the token in the browser. 
+		ctx.IndentedJSON(200,gin.H{"name":name,"role":role}) 
 		return 
 	} else {
 		ctx.IndentedJSON(401, gin.H{"Message": "Incorrect OTP entered.", "success": false})
