@@ -1,11 +1,22 @@
 package util
 
-import "github.com/gin-gonic/gin"
+import (
+	"context"
+	"log"
+	conn "nexcare/backend/config"
+)
 
-func FindUserid(ctx *gin.Context){
+func GetUserDetails(email_id string) (string,string,string){
 	
+	q1:=` select id,name,role from users where email= $1 `
 
-	q1:=` select id from users where email= $1 `
+	var id string
+	var name string
+	var role string
 
-	
+	err:=conn.DB.QueryRow(context.Background(),q1,email_id).Scan(&id,&name,&role)
+	if err!=nil{
+		log.Fatal(err.Error())
+	}
+	return id,name,role
 }

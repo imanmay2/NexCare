@@ -29,6 +29,8 @@ func PostUser(ctx *gin.Context) {
 		user_id:=uuid.New().String()
 
 		token,err:=util.GenerateJWT(user_id,user.Email) //generated the jwt token after successful OTP verification
+
+
 		if err!=nil{
 			ctx.IndentedJSON(500,gin.H{"Message":"Couldn't generate JWT Token","success":false})
 			return
@@ -40,7 +42,7 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
 			return
 		}
-		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true,"token":token}) //sends the jwt token to frontend
+		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true,"token":token,"role":user.Role,"name":user.Name}) //sends the jwt token to frontend
 		
 
 		
@@ -49,9 +51,12 @@ func PostUser(ctx *gin.Context) {
 
 
 		//function to fetch the user_id for passing into generate_JWT token. 
-		
+		id,name,role:=util.GetUserDetails(user.Email)
+		token,err:=util.GenerateJWT(id,user.Email);if err!=nil{
+			ctx.IndentedJSON(500,gin.H{"Message":err.Error(),"success":false})
+		}
 
-		ctx.IndentedJSON(200,gin.H{"name":"Manmay","role":"patient"})
+		ctx.IndentedJSON(200,gin.H{"name":name,"role":role,"token":token}) //returns the token to the frontend after login. 
 		return 
 	} else {
 		ctx.IndentedJSON(401, gin.H{"Message": "Incorrect OTP entered.", "success": false})

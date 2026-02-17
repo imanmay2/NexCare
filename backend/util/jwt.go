@@ -6,7 +6,7 @@ import (
 )
 
 
-var secretkey=[]byte("nexcare__secret__key")
+var SecretKey=[]byte("nexcare__secret__key") //store this in the .env file.
 
 func GenerateJWT(userid string,email string) (string,error){
 
@@ -18,7 +18,7 @@ func GenerateJWT(userid string,email string) (string,error){
 
 	token:=jwt.NewWithClaims(jwt.SigningMethodHS256,claims)
 
-	tokenString,err:=token.SignedString(secretkey)
+	tokenString,err:=token.SignedString(SecretKey)
 	if err!=nil{
 		return "",err
 	}
