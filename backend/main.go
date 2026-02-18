@@ -34,6 +34,7 @@ func main() {
 	
 
 	routes.RegisterUserRoutes(app)
+	routes.PatientRoutes(app)
 
 	app.Run(":8090")
 }

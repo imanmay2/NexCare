@@ -14,7 +14,6 @@ import (
 var SecretKey=[]byte("nexcare__secret__key") //store this in the .env file.
 
 func GenerateJWT(userid string,email string) (string,error){
-
 	claims:=jwt.MapClaims{
 		"user_id":userid,
 		"email":email,
