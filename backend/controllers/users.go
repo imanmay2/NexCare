@@ -6,9 +6,10 @@ import (
 	conn "nexcare/backend/config"
 	"nexcare/backend/model"
 	"nexcare/backend/util"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	
 )
 
 func PostUser(ctx *gin.Context) {
@@ -34,9 +35,9 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(401,gin.H{"Message":"Error in generating Refresh Tokens","success":false})
 			return
 		}
-		q1:= `insert into refresh_token (user_id,token,expires_at) values($1,$2,$3) `
-		_,err=conn.DB.Exec(context.Background(),q1,user_id,refreshToken,3600*24*7); if err!=nil{
-			ctx.IndentedJSON(500,gin.H{"Message" : "Refresh Token failed to insert into DB","success":false})
+		q1:= `insert into refresh_token (id,user_id,token,created_at,expires_at) values($1,$2,$3,$4,$5) `
+		_,err=conn.DB.Exec(context.Background(),q1,uuid.New().String(),user_id,refreshToken,time.Now(),time.Now().Add(7*24*time.Hour)); if err!=nil{
+			ctx.IndentedJSON(500,gin.H{"Message" : err.Error(),"success":false})
 			return
 		}
 		query := "insert into users values($1,$2,$3,$4)"
@@ -113,7 +114,7 @@ func Generate_StoreOTP(ctx *gin.Context) {
 	}
 }
 
-func GetRefreshToken(ctx *gin.Context){
+func SetAccessToken(ctx *gin.Context){
 
 	refresh_token,err:=ctx.Cookie("refresh_token"); if err!=nil{
 		ctx.IndentedJSON(404,gin.H{"Message":"Refresh Token not found","success":false})
