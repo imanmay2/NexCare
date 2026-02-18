@@ -7,6 +7,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+
+//this jwt middleware will only verify the access token 
 func JWTAuthMiddleware() gin.HandlerFunc{
 	return func(ctx *gin.Context){
 		tokenString,err:=ctx.Cookie("token")
