@@ -30,6 +30,4 @@ func DeleteRefreshToken(ctx *gin.Context,refresh_token string){
 		ctx.IndentedJSON(404,gin.H{"Message":"Refresh Token not deleted!!","success":false})
 		return
 	}
-	
-	
 }

@@ -47,17 +47,23 @@ func PostUser(ctx *gin.Context) {
 			return
 		}
 		//setting up the jwt token. 
-		ctx.SetCookie("token",token,3600*24,"/","localhost",false,true)
+		ctx.SetCookie("token",token,60*15,"/","localhost",false,true)
 		ctx.SetCookie("refresh_token",refreshToken,3600*24*7,"/","localhost",false,true)
 		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true,"role":user.Role,"name":user.Name}) //sends the jwt token to frontend
 	}else if(util.VerifyOTP(user.Email, user.Otp)  && user.IsLogin){
+		//login
 		//function to fetch the user_id for passing into generate_JWT token. 
 		id,name,role:=util.GetUserDetails(user.Email)
 		token,err:=util.GenerateJWT(id,user.Email);if err!=nil{
 			ctx.IndentedJSON(500,gin.H{"Message":err.Error(),"success":false})
 		}
 
+		refresh_token,err:=util.GenerateRefreshToken(id,user.Email); if err!=nil{
+			ctx.IndentedJSON(500,gin.H{"Message":err.Error(),"success":false})
+		}
 		ctx.SetCookie("token",token,3600*24,"/","localhost",false,true) //setting up the token in the browser. 
+		ctx.SetCookie("refresh_token",refresh_token,3600*24*7,"/","localhost",false,true) //setting up the token in the browser. 
+
 		ctx.IndentedJSON(200,gin.H{"name":name,"role":role}) 
 		return 
 	} else {
@@ -130,10 +136,10 @@ func SetAccessToken(ctx *gin.Context){
 		//frontend will redirect to the login page.
 		return
 	}
-	//generate a new access token as refresh token is matched from db. 
+	//generate a new access token as refresh token is matched from db.
 	newToken,err:=util.GenerateJWT(user_id,email)
-	ctx.SetCookie("token",newToken,3600*24,"/","localhost",false,true)
-	ctx.IndentedJSON(200,gin.H{"Message": "Access Token Refreshed","sucecess":true})
+	ctx.SetCookie("token",newToken,60*15,"/","localhost",false,true)
+	ctx.IndentedJSON(200,gin.H{"Message": "Access Token Refreshed","success":true})
 	//now again recall the same function from frontend so as to avoid multiple signup/login
 }
 

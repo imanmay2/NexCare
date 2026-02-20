@@ -17,7 +17,7 @@ func GenerateJWT(userid string,email string) (string,error){
 	claims:=jwt.MapClaims{
 		"user_id":userid,
 		"email":email,
-		"exp":time.Now().Add(time.Hour*24).Unix(),
+		"exp":time.Now().Add(time.Minute*15).Unix(),
 	}
 
 	token:=jwt.NewWithClaims(jwt.SigningMethodHS256,claims)
@@ -26,7 +26,6 @@ func GenerateJWT(userid string,email string) (string,error){
 	if err!=nil{
 		return "",err
 	}
-
 	return tokenString,nil
 }
 
@@ -36,7 +35,8 @@ func GenerateRefreshToken(userid string,email string) (string,error){
 	claims:=jwt.MapClaims{
 		"user_id":userid,
 		"email":email,
-		"exp":time.Now().Add(time.Hour*24).Unix(),
+		"iat":time.Now(),
+		"exp":time.Now().Add(time.Hour*24*7).Unix(),
 	}
 
 	token:=jwt.NewWithClaims(jwt.SigningMethodHS256,claims)
