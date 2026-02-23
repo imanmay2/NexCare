@@ -19,4 +19,7 @@ func PatientRoutes(router *gin.Engine){
 	// patientGroup.Use(middleware.JWTAuthMiddleware())
 	patientGroup.GET("/",controller.GetPatientInfo)
 	patientGroup.GET("/availableDoctor",controller.GetDoctorInfo)
+	patientGroup.GET("/getAppointment",controller.GetAppointment)
+	// patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
+	patientGroup.POST("/bookAppointment",controller.PostAppointment)
 }

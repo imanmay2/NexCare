@@ -37,7 +37,7 @@ interface Appointment {
   date: string;
   time: string;
   type: 'video' | 'audio' | 'in-person';
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
 }
 

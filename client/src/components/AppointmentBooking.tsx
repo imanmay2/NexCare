@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { ConsultationModal } from './ConsultationModal';
 
+import axios from "axios";
+
 interface User {
   id: string;
   name: string;
@@ -34,19 +36,19 @@ interface Appointment {
   date: string;
   time: string;
   type: 'video' | 'audio' | 'in-person';
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
 }
 
 interface Doctor {
-  id: string;
+  d_id: string;
   name: string;
   specialty: string;
   rating: number;
-  experience: string;
-  availability: string[];
-  consultationFee: number;
-  languages: string[];
+  experience: number;
+  availability: Record<string, Array<{ id: number; start: string; end: string }>>;
+  consultation_fee: number;
+  languages: string;
 }
 
 interface AppointmentBookingProps {
@@ -58,6 +60,7 @@ interface AppointmentBookingProps {
 }
 
 export function AppointmentBooking({ user, language, isOnline, appointments, setAppointments }: AppointmentBookingProps) {
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedDoctor, setSelectedDoctor] = useState<string>('');
@@ -162,38 +165,108 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
 
   const t = translations[language];
 
-  const doctors: Doctor[] = [
-    {
-      id: '1',
-      name: 'Dr. Priya Sharma',
-      specialty: 'General Medicine',
-      rating: 4.8,
-      experience: '8 years',
-      availability: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
-      consultationFee: 200,
-      languages: ['English', 'Hindi', 'Punjabi']
-    },
-    {
-      id: '2',
-      name: 'Dr. Rajesh Kumar',
-      specialty: 'Pediatrics',
-      rating: 4.7,
-      experience: '12 years',
-      availability: ['10:00', '11:00', '15:00', '16:00', '17:00'],
-      consultationFee: 250,
-      languages: ['Hindi', 'Punjabi']
-    },
-    {
-      id: '3',
-      name: 'Dr. Sunita Patel',
-      specialty: 'Gynecology',
-      rating: 4.9,
-      experience: '15 years',
-      availability: ['09:00', '11:00', '14:00', '16:00'],
-      consultationFee: 300,
-      languages: ['English', 'Hindi']
+
+  //TODO  : fetch the available doctor info from the backend. 
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  useEffect(() => {
+    const fetchDoctorData = async () => {
+      const response = await axios.get("http://localhost:8090/patient/availableDoctor", { withCredentials: true })
+      const doctorData: Doctor[] = response.data.data;
+      setDoctors(doctorData);
     }
-  ];
+    fetchDoctorData()
+  }, [])
+
+  //function to set the available time slots for the selected doctor and date.
+ 
+
+
+  const getAvailableTimeSlots = (
+    availability: Record<string, Array<{ id:number,start: string; end: string }>>,
+    selectedDate: Date
+  ): string[] => {
+
+    /*
+      1. First find the day from the date. 
+      2. filter the slots for that day
+      3. divide all the time slots available into 30 mins block.
+         e.g. 9:00-11:00 ==> 9:00, 9:30, 10:00, 10:30
+    */
+
+    
+
+    // Step 1: Get day name
+    const dayName = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long"
+    });
+    console.log("Day Name:", dayName);
+
+    // Step 2: Get slots for that day
+    const daySlots = availability[dayName];
+    if (!daySlots || daySlots.length === 0) {
+      return [];
+    }
+    const resultSlots: string[] = [];
+    // Helper function to convert "HH:mm" -> minutes
+    const timeToMinutes = (time: string): number => {
+      const [hours, minutes] = time.split(":").map(Number);
+      return hours * 60 + minutes;
+    };
+
+    // Helper function to convert minutes -> "HH:mm"
+    const minutesToTime = (minutes: number): string => {
+      const hrs = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const hh = hrs.toString().padStart(2, "0");
+      const mm = mins.toString().padStart(2, "0");
+      return `${hh}:${mm}`;
+    };
+    // Step 3: Split each slot into 30-min blocks
+    for (const slot of daySlots) {
+      // const [startTime, endTime] = slot.split("-");
+      let startMinutes = timeToMinutes(slot.start);
+      const endMinutes = timeToMinutes(slot.end);
+      while (startMinutes < endMinutes) {
+        resultSlots.push(minutesToTime(startMinutes));
+        startMinutes += 30;
+      }
+    }
+    console.log("Generated Slots:", resultSlots);
+    return resultSlots;
+  };
+
+  // const doctors: Doctor[] = [
+  //   {
+  //     id: '1',
+  //     name: 'Dr. Priya Sharma',
+  //     specialty: 'General Medicine',
+  //     rating: 4.8,
+  //     experience: 8.5,
+  //     availability: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
+  //     consultationFee: 200,
+  //     languages: ['English', 'Hindi', 'Punjabi']
+  //   },
+  //   {
+  //     id: '2',
+  //     name: 'Dr. Rajesh Kumar',
+  //     specialty: 'Pediatrics',
+  //     rating: 4.7,
+  //     experience: 12,
+  //     availability: ['10:00', '11:00', '15:00', '16:00', '17:00'],
+  //     consultationFee: 250,
+  //     languages: ['Hindi', 'Punjabi']
+  //   },
+  //   {
+  //     id: '3',
+  //     name: 'Dr. Sunita Patel',
+  //     specialty: 'Gynecology',
+  //     rating: 4.9,
+  //     experience: 15,
+  //     availability: ['09:00', '11:00', '14:00', '16:00'],
+  //     consultationFee: 300,
+  //     languages: ['English', 'Hindi']
+  //   }
+  // ];
 
   const timeSlots = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
@@ -210,7 +283,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const doctor = doctors.find(d => d.id === selectedDoctor);
+    const doctor = doctors.find(d => d.d_id === selectedDoctor);
     const newAppointment: Appointment = {
       id: Date.now().toString(),
       doctorName: doctor?.name || 'Unknown Doctor',
@@ -221,7 +294,13 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
       symptoms: symptoms
     };
 
-    setAppointments(prev => [...prev, newAppointment]);
+    console.log(newAppointment); //testing the selected information.
+    //hit the post request api
+    const response = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
+    const data = response.data;
+    console.log(data);
+
+    // setAppointments(prev => [...prev, newAppointment]); instead save in database. 
     setShowBookingForm(false);
     setSelectedTime('');
     setSymptoms('');
@@ -278,9 +357,9 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
               <div className="space-y-4">
                 {doctors.map((doctor) => (
                   <div
-                    key={doctor.id}
-                    onClick={() => setSelectedDoctor(doctor.id)}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedDoctor === doctor.id
+                    key={doctor.d_id}
+                    onClick={() => setSelectedDoctor(doctor.d_id)}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedDoctor === doctor.d_id
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                       }`}
@@ -297,17 +376,17 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                               ⭐ {doctor.rating}
                             </span>
-                            <span className="text-xs text-gray-500">{doctor.experience}</span>
+                            <span className="text-xs text-gray-500">{doctor.experience} years</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-semibold">₹{doctor.consultationFee}</div>
+                        <div className="text-lg font-semibold">₹{doctor.consultation_fee}</div>
                         <div className="text-xs text-gray-500">{t.fee}</div>
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-gray-600">
-                      {t.languages}: {doctor.languages.join(', ')}
+                      {t.languages}: {doctor.languages}
                     </div>
                   </div>
                 ))}
@@ -340,8 +419,8 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                 <CardContent>
                   <div className="grid grid-cols-3 gap-2">
                     {timeSlots.map((time) => {
-                      const doctor = doctors.find(d => d.id === selectedDoctor);
-                      const isAvailable = doctor?.availability.includes(time);
+                      const doctor = doctors.find(d => d.d_id === selectedDoctor);
+                      const isAvailable = doctor?.availability;
 
                       return (
                         <Button
