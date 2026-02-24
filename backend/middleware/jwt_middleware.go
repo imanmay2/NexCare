@@ -23,7 +23,7 @@ func JWTAuthMiddleware() gin.HandlerFunc{
 
 			//generate the access token after verifying the signature of the refresh token. 
 			user_id,email,err3:=util.VerifySignature(ctx,refreshToken); if(err3!=nil){
-				ctx.IndentedJSON(401,gin.H{"Message":err3.Error(),"success":false})
+				ctx.IndentedJSON(401,gin.H{"Message":"Refresh_Token is incorrect","success":false})
 				ctx.Abort()
 				return
 			}
@@ -34,7 +34,6 @@ func JWTAuthMiddleware() gin.HandlerFunc{
 				ctx.Abort()
 				return
 			}
-
 			 ctx.SetCookie("token",access_token,60*15,"/","localhost",false,true)
 		}
 
