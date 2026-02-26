@@ -31,6 +31,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
   const [isLogin, setIsLogin] = useState(true);
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isReSendOtp, setIsReSendOtp] = useState(false);
 
   const { showToast } = useError();
 
@@ -109,6 +110,9 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
     }
     try {
       setIsLoading(true)
+      setInterval(() => {
+        setIsReSendOtp(true);
+      }, 5000);
       // Get OTP request
       const response = await fetch('http://localhost:8090/users/otp', {
         method: 'POST',
@@ -274,8 +278,8 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
 
         {/* Get OTP Button */}
         <div className="flex w-full">
-          <Button className="ml-auto mt-4" onClick={(e: any) => getOTP(e)} disabled={isLoading || isOtpSent}>
-            Get OTP
+          <Button className="ml-auto mt-4" onClick={(e: any) => getOTP(e)} disabled={isLoading || (isOtpSent && !isReSendOtp)}>
+            {isReSendOtp ? "Re-send OTP" : "Get OTP"}
           </Button>
         </div>
       </div>}
@@ -291,6 +295,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
                 id={`otp-${index}`}
                 type="text"
                 maxLength={1}
+                autoFocus={index === 0}
                 value={otp[index] || ""}
                 onChange={(e) => {
                   const val = e.target.value;

@@ -21,7 +21,7 @@ func PostUser(ctx *gin.Context) {
 	}
 	log.Printf("Data from post request %v %v %v %v\n", user.Name, user.Email, user.Role, user.Otp)
 
-	if (util.VerifyOTP(user.Email, user.Otp)  && !user.IsLogin){
+	if util.VerifyOTP(user.Email, user.Otp) && !user.IsLogin {
 		//signup
 
 		query := "insert into users values($1,$2,$3,$4)"
@@ -34,17 +34,15 @@ func PostUser(ctx *gin.Context) {
 		//generate the JWT.
 
 		//Move ahead.
-	}else if(util.VerifyOTP(user.Email, user.Otp)  && user.IsLogin){
-		//send JWT after 
-		ctx.IndentedJSON(200,gin.H{"name":"Manmay","role":"patient"})
-		return 
+	} else if util.VerifyOTP(user.Email, user.Otp) && user.IsLogin {
+		//send JWT after
+		ctx.IndentedJSON(200, gin.H{"name": "Manmay", "role": "doctor"})
+		return
 	} else {
 		ctx.IndentedJSON(401, gin.H{"Message": "Incorrect OTP entered.", "success": false})
 		return
 	}
 }
-
-
 
 func Generate_StoreOTP(ctx *gin.Context) {
 	var user model.UserOtp
@@ -68,7 +66,7 @@ func Generate_StoreOTP(ctx *gin.Context) {
 	found := false
 	for rows.Next() {
 		found = true
-		log.Printf("---->found : %v\n",found)
+		log.Printf("---->found : %v\n", found)
 	}
 
 	if found {

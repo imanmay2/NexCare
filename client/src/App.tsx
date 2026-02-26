@@ -32,6 +32,8 @@ import {
   Phone,
   MessageSquare,
 } from "lucide-react";
+import { DoctorOnboarding } from "./components/DoctorProfileSetup";
+import { useError } from "./components/ui/Toast";
 
 interface User {
   id: string;
@@ -39,9 +41,11 @@ interface User {
   role: "patient" | "doctor" | "pharmacy";
   email: string;
   language: "en" | "hi" | "pa";
+  isOnBoarded?: boolean;
 }
 
 export default function App() {
+  const { showToast } = useError();
   const [user, setUser] = useState<User | null>();
   const [language, setLanguage] = useState<"en" | "hi" | "pa">(
     "en",
@@ -97,6 +101,15 @@ export default function App() {
 
   const t = translations[language];
 
+  const logout = async () => {
+    await fetch("http://localhost:8090/users/logout").then((res) => {
+      if (res.ok)
+        setUser(null);
+    }).catch((err) => {
+      showToast("Error in Logging out... PLease Try again", false);
+    });
+  }
+
 
   if (user) {
     switch (user.role) {
@@ -104,25 +117,40 @@ export default function App() {
         return (
           <PatientDashboard
             user={user}
-            onLogout={() => setUser(null)}
+            onLogout={logout}
             language={language}
             isOnline={isOnline}
           />
         );
       case "doctor":
-        return (
-          <DoctorDashboard
-            user={user}
-            onLogout={() => setUser(null)}
-            language={language}
-            isOnline={isOnline}
-          />
-        );
+        if (user.isOnBoarded) {
+          return (
+            <DoctorDashboard
+              user={user}
+              onLogout={logout}
+              language={language}
+              isOnline={isOnline}
+            />
+          );
+        } else if (!user.isOnBoarded) {
+          return (
+            <DoctorOnboarding
+              onComplete={(data) => {
+                console.log("Professional Data:", data);
+                setUser({ ...user, isOnBoarded: true });
+              }}
+              onLogout={logout}
+              language={language}
+              isOnline={isOnline}
+              setLanguage={setLanguage}
+            />
+          );
+        }
       case "pharmacy":
         return (
           <PharmacyDashboard
             user={user}
-            onLogout={() => setUser(null)}
+            onLogout={logout}
             language={language}
             isOnline={isOnline}
           />
