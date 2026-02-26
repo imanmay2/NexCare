@@ -120,28 +120,6 @@ func Generate_StoreOTP(ctx *gin.Context) {
 	}
 }
 
-func SetAccessToken(ctx *gin.Context){
-
-	refresh_token,err:=ctx.Cookie("refresh_token"); if err!=nil{
-		ctx.IndentedJSON(404,gin.H{"Message":"Refresh Token not found","success":false})
-		return
-	}
-	//verify signature of the refresh token 
-	user_id,email,err:=util.VerifySignature(ctx,refresh_token) 
-	query:=` select exists(select 1 from refresh_token where token=$1) `
-	var exist bool
-	err=conn.DB.QueryRow(context.Background(),query,refresh_token).Scan(&exist)
-	if err!=nil || !exist {
-		ctx.IndentedJSON(404,gin.H{"Message":"Token not found in DB , Re-register","success":false})
-		//frontend will redirect to the login page.
-		return
-	}
-	//generate a new access token as refresh token is matched from db.
-	newToken,err:=util.GenerateJWT(user_id,email)
-	ctx.SetCookie("token",newToken,60*15,"/","localhost",false,true)
-	ctx.IndentedJSON(200,gin.H{"Message": "Access Token Refreshed","success":true})
-	//now again recall the same function from frontend so as to avoid multiple signup/login
-}
 
 
 //User Logout 
