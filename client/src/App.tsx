@@ -32,6 +32,7 @@ import {
   Phone,
   MessageSquare,
 } from "lucide-react";
+import axios from "axios";
 
 interface User {
   id: string;
@@ -50,6 +51,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Check if users exists and set the USER
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -61,6 +64,13 @@ export default function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+
+  const onLogout = async () => {
+    const res = await axios.post("http://localhost:8090/users/logout", {}, { withCredentials: true });
+    if (res.status === 200) {
+      setUser(null);
+    }
+  }
 
   const translations = {
     en: {
@@ -104,7 +114,7 @@ export default function App() {
         return (
           <PatientDashboard
             user={user}
-            onLogout={() => setUser(null)}
+            onLogout={onLogout}
             language={language}
             isOnline={isOnline}
           />
@@ -113,7 +123,7 @@ export default function App() {
         return (
           <DoctorDashboard
             user={user}
-            onLogout={() => setUser(null)}
+            onLogout={onLogout}
             language={language}
             isOnline={isOnline}
           />
@@ -122,7 +132,7 @@ export default function App() {
         return (
           <PharmacyDashboard
             user={user}
-            onLogout={() => setUser(null)}
+            onLogout={onLogout}
             language={language}
             isOnline={isOnline}
           />
