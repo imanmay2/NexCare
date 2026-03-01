@@ -20,7 +20,6 @@ func PostUser(ctx *gin.Context) {
 		ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
-	log.Printf("Data from post request %v %v %v %v\n", user.Name, user.Email, user.Role, user.Otp)
 	if (util.VerifyOTP(user.Email, user.Otp)  && !user.IsLogin){
 		//signup
 		//generate the JWT and send it to the frontend.
@@ -96,7 +95,6 @@ func Generate_StoreOTP(ctx *gin.Context) {
 	found := false
 	for rows.Next() {
 		found = true
-		log.Printf("---->found : %v\n",found)
 	}
 
 	if found {

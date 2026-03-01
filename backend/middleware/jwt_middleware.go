@@ -7,8 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-
-//this jwt middleware will only verify the access token 
+//this jwt middleware will only verify the access token
 func JWTAuthMiddleware() gin.HandlerFunc{
 	return func(ctx *gin.Context){
 		tokenString,err:=ctx.Cookie("token")
@@ -47,7 +46,7 @@ func JWTAuthMiddleware() gin.HandlerFunc{
 			return
 		}
 		claims := token.Claims.(jwt.MapClaims)
-		userID := int(claims["user_id"].(float64))
+		userID := claims["user_id"].(string)
 		email := claims["email"].(string)
 		ctx.Set("userID", userID)
 		ctx.Set("email", email)
