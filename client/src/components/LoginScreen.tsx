@@ -296,6 +296,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
             {[0, 1, 2, 3, 4, 5].map((index) => (
               <input
                 key={index}
+                autoFocus={index === 0}
                 id={`otp-${index}`}
                 type="text"
                 maxLength={1}
