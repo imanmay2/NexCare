@@ -8,7 +8,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	// "os"
+	// "nexcare/backend/middleware"
 )
 
 func main() {
@@ -31,7 +31,10 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	
+
 	routes.RegisterUserRoutes(app)
+	routes.PatientRoutes(app)
 
 	app.Run(":8090")
 }
