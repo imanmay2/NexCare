@@ -64,7 +64,7 @@ func PostUser(ctx *gin.Context) {
 		if err != nil {
 			ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		}
-		ctx.SetCookie("token", token, 3600*24, "/", "localhost", false, true)                   //setting up the token in the browser.
+		ctx.SetCookie("token", token, 60*15, "/", "localhost", false, true)                     //setting up the token in the browser.
 		ctx.SetCookie("refresh_token", refresh_token, 3600*24*7, "/", "localhost", false, true) //setting up the token in the browser.
 
 		ctx.IndentedJSON(200, gin.H{"name": name, "role": role})

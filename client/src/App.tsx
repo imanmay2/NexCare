@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { DoctorOnboarding } from "./components/DoctorProfileSetup";
 import { useError } from "./components/ui/Toast";
+import axios from "axios";
 
 interface User {
   id: string;
@@ -104,12 +105,12 @@ export default function App() {
   const t = translations[language];
 
   const logout = async () => {
-    await fetch("http://localhost:8090/users/logout").then((res) => {
-      if (res.ok)
-        setUser(null);
-    }).catch((err) => {
+    const res = await axios.post("http://localhost:8090/users/logout", {}, { withCredentials: true })
+    if (res.status === 200)
+      setUser(null);
+    else {
       showToast("Error in Logging out... PLease Try again", false);
-    });
+    };
   }
 
 
