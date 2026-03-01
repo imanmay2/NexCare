@@ -54,12 +54,16 @@ func Create_Send_OTP(email_id string,ctx *gin.Context){
 			actualOTP := GenerateOTP()
 			//Store OTP in Redis
 			StoreRedisOTP(email_id, actualOTP)
+
+
 			//Send the otp by the email
-			err := SendEmail(email_id, actualOTP)
-			if err != nil {
-				ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
-				return
-			}
+			// err := SendEmail(email_id, actualOTP)
+			// if err != nil {
+			// 	ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+			// 	return
+			// }
+
+			
 			ctx.IndentedJSON(200, gin.H{"Message": "OTP sent sucessfully", "success": true})
 			
 }

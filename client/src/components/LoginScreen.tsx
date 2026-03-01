@@ -112,6 +112,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
       // Get OTP request
       const response = await fetch('http://localhost:8090/users/otp', {
         method: 'POST',
+        credentials: "include",
         headers: {
           'Content-Type': 'application/json'
         },
@@ -138,6 +139,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
     try {
       const response = await fetch('http://localhost:8090/users/', {
         method: 'POST',
+        credentials: "include",
         headers: {
           'Content-Type': 'application/json'
         },
@@ -151,6 +153,8 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
       })
       const responseData = await response.json();
       if (response.ok) {
+        //backend res
+        console.log(responseData);
         setIsLoading(false);
         if (responseData.Message)
           showToast(responseData.Message, responseData.success);

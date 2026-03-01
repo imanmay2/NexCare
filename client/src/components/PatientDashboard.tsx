@@ -30,6 +30,7 @@ import { AppointmentBooking } from './AppointmentBooking';
 import { HealthRecords } from './HealthRecords';
 import { PharmacyLocator } from './PharmacyLocator';
 import { ConsultationModal } from './ConsultationModal';
+import axios from 'axios';
 
 interface User {
   id: string;
@@ -52,7 +53,7 @@ interface Appointment {
   date: string;
   time: string;
   type: 'video' | 'audio' | 'in-person';
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
 }
 
@@ -64,26 +65,21 @@ interface HealthMetric {
 }
 
 export function PatientDashboard({ user, onLogout, language, isOnline }: PatientDashboardProps) {
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: '1',
-      doctorName: 'Dr. Priya Sharma',
-      date: '2024-12-18',
-      time: '14:30',
-      type: 'video',
-      status: 'upcoming',
-      symptoms: 'Fever, body ache'
-    },
-    {
-      id: '2',
-      doctorName: 'Dr. Rajesh Kumar',
-      date: '2024-12-15',
-      time: '10:00',
-      type: 'audio',
-      status: 'completed',
-      symptoms: 'Headache'
+
+  //use the useEffect for the fetching the data from the backend and set the state for the appointments.
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  useEffect(()=>{
+    let fetchappointmentData=async()=>{
+      let response=await axios.get("http://localhost:8090/patient/getAppointment",{
+        withCredentials:true
+      });
+      console.log(response.data.data);
+      if(response.data.data!=null){
+        setAppointments(response.data.data);
+      }
     }
-  ]);
+    fetchappointmentData();
+  },[])
 
   const [healthMetrics] = useState<HealthMetric[]>([
     { type: 'Blood Pressure', value: '120/80', date: '2024-12-15', status: 'normal' },
