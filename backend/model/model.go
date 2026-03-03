@@ -35,6 +35,7 @@ type DoctorInfo struct{
 
 type Appointment struct{
 	Id string ` json:"id" binding:"required" `
+	D_id string ` json:"d_id"  binding:"required" `
 	Date time.Time ` json:"date" binding:"required" `
 	DoctorName string ` json:"doctorName" binding:"required" `
 	Status string ` json:"status" binding:"required" `

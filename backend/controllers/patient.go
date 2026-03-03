@@ -59,21 +59,10 @@ func PostAppointment(ctx *gin.Context){
 		ctx.IndentedJSON(500,gin.H{"Message":err.Error(),"success":false})
 		return
 	}
-
-	//search the doctor name in the users table and fetch the id and insert into the appointment table.
-	var d_id string
-	p_id:=uuid.NewString()
-	q1:=" select id from users where name=$1 and role=$2 "
-	err=conn.DB.QueryRow(context.Background(),q1,appointmentDetails.DoctorName,"doctor").Scan(&d_id)
-	if err!=nil{
-		ctx.IndentedJSON(500,gin.H{"Message":"No Data found in the List ","success":false})
-		return
-	}
-
 	//push the data in the appointment table.
-	
+	p_id:=ctx.GetString("userID")
 	q2:=" insert into appointment values($1,$2,$3,$4,$5,$6,$7)"
-	_,err=conn.DB.Exec(context.Background(),q2,uuid.NewString(),p_id,d_id,appointmentDetails.Date,appointmentDetails.Time,appointmentDetails.Status,appointmentDetails.Type,appointmentDetails.Symptom)
+	_,err=conn.DB.Exec(context.Background(),q2,uuid.NewString(),p_id,appointmentDetails.D_id,appointmentDetails.Date,appointmentDetails.Time,appointmentDetails.Status,appointmentDetails.Type,appointmentDetails.Symptom)
 	if err!=nil{
 		ctx.IndentedJSON(500,gin.H{"Message":"Could insert data in the appointment table","success":true})
 		return
