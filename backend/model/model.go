@@ -5,32 +5,38 @@ import (
 	"time"
 )
 
-//Models for the Users information
+// Models for the Users information
 type User struct {
-	Name string ` json:"name"  `
-	Email string ` json:"email"  `
-	Role string ` json:"role" `
-	Otp string ` json:"otp" binding:"required" `
-	IsLogin bool ` json:"isLogin" `
+	Id         string ` json:"id"  `
+	Name       string ` json:"name"  `
+	Email      string ` json:"email"  `
+	Role       string ` json:"role" `
+	Otp        string ` json:"otp" binding:"required" `
+	IsLogin    bool   ` json:"isLogin" `
+	ProfileURL string ` json:"profile_url" `
 }
-
 
 type UserOtp struct {
-	Email string ` json:"email"  binding:"required" `
-	IsLogin bool ` json:"isLogin"  `
+	Email   string ` json:"email"  binding:"required" `
+	IsLogin bool   ` json:"isLogin"  `
 }
 
+// Models for the Doctor Information
+type DoctorInfo struct {
+	D_id         string          ` json:"d_id" binding:"required" `
+	Name         string          ` json:"name" binding:"required" `
+	Fee          int             ` json:"consultation_fee" binding:"required" `
+	Rating       float32         ` json:"rating" `
+	Languages    string          ` json:"languages" binding:"required" `
+	Experience   float32         ` json:"experience" binding:"required" `
+	Availability json.RawMessage ` json:"availability" `
+	Domain       string          ` json:"domain" binding:"required" `
+	Hospital     string          ` json:"hospital" `
+}
 
-//Models for the Doctor Information
-type DoctorInfo struct{
-	D_id string ` json:"d_id" binding:"required" `
-	Name string ` json:"name" binding:"required" `
-	Fee int ` json:"consultation_fee" binding:"required" `
-	Rating float32 ` json:"rating" binding:"required" `
-	Languages string ` json:"languages" binding:"required" `
-	Experience float32 ` json:"experience" binding:"required" `
+type DoctorSchedule struct {
+	D_id         string          ` json:"d_id" binding:"required" `
 	Availability json.RawMessage ` json:"availability" binding:"required" `
-	Domain string ` json:"domain" binding:"required" `
 }
 
 type Appointment struct{

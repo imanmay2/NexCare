@@ -158,12 +158,12 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
       const responseData = await response.json();
       if (response.ok) {
         //backend res
-        console.log(responseData);
+
         setIsLoading(false);
         if (responseData.Message)
           showToast(responseData.Message, responseData.success);
         const user: User = {
-          id: '1',
+          id: responseData.id,
           name: responseData.name,
           role: responseData.role,
           email: email,
@@ -300,7 +300,6 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
                 id={`otp-${index}`}
                 type="text"
                 maxLength={1}
-                autoFocus={index === 0}
                 value={otp[index] || ""}
                 onChange={(e) => {
                   const val = e.target.value;
