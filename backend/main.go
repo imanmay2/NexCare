@@ -25,16 +25,15 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "https://nexcare.netlify.app"},
-		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
+		AllowMethods:     []string{"POST", "GET", "OPTIONS", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
 
-	
-
 	routes.RegisterUserRoutes(app)
 	routes.PatientRoutes(app)
+	routes.DoctorRoutes(app)
 
 	app.Run(":8090")
 }

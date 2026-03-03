@@ -10,6 +10,8 @@ import { Stethoscope, Globe2, Briefcase, IndianRupee, GraduationCap, ChevronRigh
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command";
 import { ScrollArea } from "./ui/scroll-area";
+import { useError } from "./ui/Toast";
+import { INDIAN_LANGUAGES, SPECIALIZATIONS } from "../utils/utils";
 
 interface OnboardingProps {
     onComplete: (data: any) => void;
@@ -21,20 +23,21 @@ interface OnboardingProps {
 
 interface OnboardingForm {
     languages: string[];
-    experience: string;
+    experience: number;
     domain: string;
-    fee: string;
+    fee: number;
 }
 
 export const DoctorOnboarding = ({ onComplete, language, onLogout, isOnline, setLanguage }: OnboardingProps) => {
     const { register, setValue, watch } = useForm<OnboardingForm>({
         defaultValues: {
             languages: [],
-            experience: "",
+            experience: 0,
             domain: "",
-            fee: ""
+            fee: 0
         }
     });
+    const { showToast } = useError();
 
     // const selectedLanguages = ["en", "hi"];
     const selectedLanguages = watch("languages");
@@ -57,6 +60,10 @@ export const DoctorOnboarding = ({ onComplete, language, onLogout, isOnline, set
             fee: watch("fee"),
             languages: watch("languages")
         };
+        if (formData.domain === "" || formData.experience <= 0 || formData.fee < 0 || formData.languages.length === 0) {
+            showToast("Please fill all the fields correctly", false);
+            return;
+        }
         onComplete(formData);
     }
 
@@ -94,34 +101,6 @@ export const DoctorOnboarding = ({ onComplete, language, onLogout, isOnline, set
     };
 
     const t = translations[language];
-
-    const INDIAN_LANGUAGES = [
-        // Major/Commonly Used
-        { label: "English", value: "en" },
-        { label: "Hindi", value: "hi" },
-        { label: "Punjabi", value: "pa" },
-        { label: "Bengali", value: "bn" },
-        { label: "Marathi", value: "mr" },
-        { label: "Telugu", value: "te" },
-        { label: "Tamil", value: "ta" },
-        { label: "Gujarati", value: "gu" },
-        { label: "Urdu", value: "ur" },
-        { label: "Kannada", value: "kn" },
-        { label: "Odia", value: "or" },
-        { label: "Malayalam", value: "ml" },
-        // Official Scheduled Languages
-        { label: "Assamese", value: "as" },
-        { label: "Bodo", value: "brx" },
-        { label: "Dogri", value: "doi" },
-        { label: "Konkani", value: "kok" },
-        { label: "Maithili", value: "mai" },
-        { label: "Meitei (Manipuri)", value: "mni" },
-        { label: "Nepali", value: "ne" },
-        { label: "Santali", value: "sat" },
-        { label: "Sindhi", value: "sd" },
-        { label: "Kashmiri", value: "ks" },
-        { label: "Sanskrit", value: "sa" },
-    ];
 
     const [searchQuery, setSearchQuery] = useState("");
     const filteredLanguages = INDIAN_LANGUAGES.filter(lang =>
@@ -177,7 +156,10 @@ export const DoctorOnboarding = ({ onComplete, language, onLogout, isOnline, set
                                                     : "outline"
                                             }
                                             size="sm"
-                                            onClick={() => setLanguage(lang)}
+                                            onClick={() => {
+                                                document.cookie = `language=${lang}; path=/; max-age=31536000`;
+                                                setLanguage(lang);
+                                            }}
                                             className="px-3 py-1"
                                         >
                                             {languageLabels[lang]}
@@ -214,10 +196,11 @@ export const DoctorOnboarding = ({ onComplete, language, onLogout, isOnline, set
                                             <SelectValue placeholder="Select Domain" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="general">General Physician</SelectItem>
-                                            <SelectItem value="pediatrics">Pediatrics</SelectItem>
-                                            <SelectItem value="gynecology">Gynecology</SelectItem>
-                                            {/* Add other domains as needed */}
+                                            {SPECIALIZATIONS.map((spec) => (
+                                                <SelectItem key={spec.value} value={spec.value}>
+                                                    {spec.label}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -227,7 +210,7 @@ export const DoctorOnboarding = ({ onComplete, language, onLogout, isOnline, set
                                     <Input
                                         type="number"
                                         placeholder="10"
-                                        {...register("experience")}
+                                        {...register("experience", { valueAsNumber: true })}
                                         className="bg-white border-gray-200"
                                     />
                                 </div>
@@ -241,7 +224,7 @@ export const DoctorOnboarding = ({ onComplete, language, onLogout, isOnline, set
                                         type="number"
                                         placeholder="500"
                                         className="pl-8 bg-white border-gray-200"
-                                        {...register("fee")}
+                                        {...register("fee", { valueAsNumber: true })}
                                     />
                                 </div>
                             </div>
@@ -279,7 +262,7 @@ export const DoctorOnboarding = ({ onComplete, language, onLogout, isOnline, set
                                 </div>
 
                                 <Popover open={isLangaugeSelectorOpen} onOpenChange={setIsLanguageSelectorOpen}>
-                                    <PopoverTrigger className="w-full">
+                                    <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
                                             type="button"
