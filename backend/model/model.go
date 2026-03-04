@@ -13,7 +13,7 @@ type User struct {
 	Role       string ` json:"role" `
 	Otp        string ` json:"otp" binding:"required" `
 	IsLogin    bool   ` json:"isLogin" `
-	ProfileURL string ` json:"profile_url" `
+	ProfileURL *string ` json:"profile_url" `
 }
 
 type UserOtp struct {

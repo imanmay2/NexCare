@@ -51,20 +51,26 @@ func GetAppointment(ctx *gin.Context) {
 }
 
 func PostAppointment(ctx *gin.Context) {
+	fmt.println("check ck 0")
 	//post request for feeding the appointment details into the database
 	var appointmentDetails model.Appointment
 	err := ctx.ShouldBindJSON(&appointmentDetails)
+	fmt.println("check ck 1")
 	if err != nil {
-		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		fmt.pritnln("check ck 2")
+		ctx.IndentedJSON(500, gin.H{"Message": "err.Error()", "success": false})
 		return
 	}
 	//push the data in the appointment table.
 	p_id:=ctx.GetString("userID")
-	q2:=" insert into appointment values($1,$2,$3,$4,$5,$6,$7)"
+	q2:=`insert into appointment values($1,$2,$3,$4,$5,$6,$7,$8)`
+	fmt.println("check ck 3")
 	_,err=conn.DB.Exec(context.Background(),q2,uuid.NewString(),p_id,appointmentDetails.D_id,appointmentDetails.Date,appointmentDetails.Time,appointmentDetails.Status,appointmentDetails.Type,appointmentDetails.Symptom)
 	if err!=nil{
-		ctx.IndentedJSON(500,gin.H{"Message":"Could insert data in the appointment table","success":true})
+		fmt.println("check ck 4")
+		ctx.IndentedJSON(500,gin.H{"Message":"Could insert data in the appointment table","success":false})
 		return
 	}
+	fmt.println("check ck 5")
 	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Booked Successfully", "success": true})
 }

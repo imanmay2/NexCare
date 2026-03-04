@@ -74,6 +74,8 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
         withCredentials:true
       });
       console.log(response.data.data);
+      let res_=response.data.data;
+      
       if(response.data.data!=null){
         setAppointments(response.data.data);
       }
