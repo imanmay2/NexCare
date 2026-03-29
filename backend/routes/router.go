@@ -23,6 +23,7 @@ func PatientRoutes(router *gin.Engine) {
 	patientGroup.GET("/getAppointment", controller.GetAppointment)
 	// patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
 	patientGroup.POST("/bookAppointment", controller.PostAppointment)
+	patientGroup.GET("/healthmetrics",controller.GetHealthMetrics)
 }
 
 func DoctorRoutes(router *gin.Engine) {

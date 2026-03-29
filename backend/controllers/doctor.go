@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	conn "nexcare/backend/config"
-	"nexcare/backend/model"
+	"nexcare/backend/models"
 	"nexcare/backend/util"
 
 	"github.com/gin-gonic/gin"

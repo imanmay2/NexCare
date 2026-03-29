@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 	conn "nexcare/backend/config"
-	"nexcare/backend/model"
-
+	"nexcare/backend/models"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -51,26 +51,47 @@ func GetAppointment(ctx *gin.Context) {
 }
 
 func PostAppointment(ctx *gin.Context) {
-	fmt.println("check ck 0")
+	fmt.Println("check ck 0")
 	//post request for feeding the appointment details into the database
 	var appointmentDetails model.Appointment
 	err := ctx.ShouldBindJSON(&appointmentDetails)
-	fmt.println("check ck 1")
+	fmt.Println("check ck 1")
 	if err != nil {
-		fmt.pritnln("check ck 2")
+		fmt.Println("check ck 2")
 		ctx.IndentedJSON(500, gin.H{"Message": "err.Error()", "success": false})
 		return
 	}
 	//push the data in the appointment table.
 	p_id:=ctx.GetString("userID")
 	q2:=`insert into appointment values($1,$2,$3,$4,$5,$6,$7,$8)`
-	fmt.println("check ck 3")
+	fmt.Println("check ck 3")
 	_,err=conn.DB.Exec(context.Background(),q2,uuid.NewString(),p_id,appointmentDetails.D_id,appointmentDetails.Date,appointmentDetails.Time,appointmentDetails.Status,appointmentDetails.Type,appointmentDetails.Symptom)
 	if err!=nil{
-		fmt.println("check ck 4")
+		fmt.Println("check ck 4")
 		ctx.IndentedJSON(500,gin.H{"Message":"Could insert data in the appointment table","success":false})
 		return
 	}
-	fmt.println("check ck 5")
+	fmt.Println("check ck 5")
 	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Booked Successfully", "success": true})
+}
+
+
+func GetHealthMetrics(ctx *gin.Context){
+	fmt.Println("<---->Welcome to Health Metrics<----->");
+	user_ID:=ctx.GetString("userID")
+	q1:=` select id,bp,temp,heart_rate,weight,height,created_at from health_metrics where p_id= $1 `
+	rows,err:=conn.DB.Query(context.Background(),q1,user_ID)
+	if(err!=nil){
+		ctx.IndentedJSON(500,gin.H{"Message":err.Error(),"success":false})
+		return;
+	}
+	//if no error
+	var HealthMetrics_Data []model.Health_Metrics
+	for rows.Next(){
+		var metrices model.Health_Metrics
+		rows.Scan(&metrices.Id,&metrices.Bp,&metrices.Temp,&metrices.Heart_Rate,&metrices.Weight,&metrices.Height,&metrices.Created_At)
+		HealthMetrics_Data=append(HealthMetrics_Data,metrices);
+	}
+	ctx.IndentedJSON(200,gin.H{"Message":"Health Metrics Data fetched. ","success":true,"data":HealthMetrics_Data})
+	//create a model in frontend also.
 }

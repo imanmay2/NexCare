@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	conn "nexcare/backend/config"
-	"nexcare/backend/model"
+	"nexcare/backend/models"
 	"nexcare/backend/util"
 	"os"
 	"path/filepath"
