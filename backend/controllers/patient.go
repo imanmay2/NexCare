@@ -119,5 +119,19 @@ func GetHealthSummary(ctx *gin.Context){
 func GetConsultationData(ctx *gin.Context){
     fmt.Println("Welcome to Consultation Data")
     userID:=ctx.GetString("userID")
+    q1:=` select c.id,c.created_at,c.a_id,c.title,c.symptoms,c.diagnosis,c.treatment,c.physical_examination,c.drug,c.investigations from consultation c inner join appointment a on a.id=c.a_id where a.p_id= $1 `
+    rows,err:=conn.DB.Query(context.Background(),q1,userID)
+    if(err!=nil){
+        ctx.IndentedJSON(500,gin.H{"Message":err.Error(),"success":false});
+        return
+    }
+    var consultData[] model.Consultation
+    for rows.Next(){
+        var data model.Consultation
+        rows.Scan(&data.Id,&data.Created_At,&data.A_id,&data.Title,&data.Symptoms,&data.Diagnosis,&data.Treatment,&data.Physical_examination,&data.Drug,&data.Investigations)
+        consultData=append(consultData,data)
+    }
+
+    ctx.IndentedJSON(200,gin.H{"Message":"Data Found","data":consultData,"success":true})
     
 }

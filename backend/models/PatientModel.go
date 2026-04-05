@@ -1,7 +1,6 @@
 package model
 
 import (
-    "encoding/json"
     "time"
 )
 
@@ -61,4 +60,24 @@ type HealthSummary struct{
     Menstrual_History Menstrual ` json:"menstrual_history" `
     Imp time.Time ` json:"Imp" `
     Created_At time.Time `json:"created_at"`
+}
+
+type DrugType struct {
+	Name string ` json:"name" `
+	Dosage string ` json:"dosage" `
+	Duration string ` json:"duration" `
+	Frequency string ` json:"frequency" `
+}
+
+type Consultation struct{
+	Id string ` json:"id" binding:"required" `
+	Created_At time.Time ` json:"created_at" `
+	A_id string ` json:"a_id" binding:"required" `
+	Title string ` json:"title" binding:"required" `
+	Symptoms string ` json:"symptoms" binding:"required" `
+	Diagnosis string ` json:"diagnosis" binding:"required" `
+	Treatment string ` json:"treatment" binding:"required" `
+	Physical_examination string ` json:"physical_examination" binding:"required" `
+	Drug DrugType ` json:"drug" binding:"required" `
+	Investigations string ` json:"investigations" `
 }

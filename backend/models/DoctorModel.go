@@ -2,7 +2,6 @@ package model
 
 import (
     "encoding/json"
-    "time"
 )
 
 // Models for the Doctor Information

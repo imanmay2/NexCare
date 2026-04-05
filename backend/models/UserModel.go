@@ -1,9 +1,5 @@
 package model
 
-import (
-    "encoding/json"
-    "time"
-)
 
 // Models for the Users information
 type User struct {
