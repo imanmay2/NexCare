@@ -115,3 +115,9 @@ func GetHealthSummary(ctx *gin.Context){
     }
     ctx.IndentedJSON(200,gin.H{"Message":"Health Summary","success":true,"data":summary})
 }
+
+func GetConsultationData(ctx *gin.Context){
+    fmt.Println("Welcome to Consultation Data")
+    userID:=ctx.GetString("userID")
+    
+}
