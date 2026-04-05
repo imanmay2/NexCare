@@ -1,0 +1,47 @@
+# ========================
+# OS FILES
+# ========================
+.DS_Store
+
+# ========================
+# LOG FILES
+# ========================
+*.log
+
+# ========================
+# TEMP / RUNTIME FILES
+# ========================
+tmp/
+backend/tmp/
+
+# ========================
+# GO BUILD FILES
+# ========================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+main
+
+# ========================
+# ENV FILES
+# ========================
+.env
+backend/.env
+client/.env
+
+# ========================
+# NODE (if client exists)
+# ========================
+client/node_modules/
+client/build/
+client/dist/
+
+# ========================
+# IDE FILES
+# ========================
+.vscode/
+.idea/
