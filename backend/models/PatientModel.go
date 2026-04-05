@@ -33,8 +33,8 @@ type Health_Metrics struct{
 }
 
 type Contacts struct{
-    Name string ` json:"name"`
-    Phn_no string `json:"phn_no"`
+    Name string ` json:"name" `
+    Phn_no string `json:"phn_no" `
     Relation string ` json:"relation" `
 }
 
@@ -58,7 +58,7 @@ type HealthSummary struct{
     Current_Medication string ` json:"current_medications" `
     Medical_Conditions string ` json:"medical_conditions" `
     Menstrual_History Menstrual ` json:"menstrual_history" `
-    Imp time.Time ` json:"Imp" `
+    Imp string ` json:"Imp" `
     Created_At time.Time `json:"created_at"`
 }
 
@@ -72,7 +72,7 @@ type DrugType struct {
 type Consultation struct{
 	Id string ` json:"id" binding:"required" `
 	Created_At time.Time ` json:"created_at" `
-	A_id string ` json:"a_id" binding:"required" `
+	// A_id string ` json:"a_id" binding:"required" `
 	Title string ` json:"title" binding:"required" `
 	Symptoms string ` json:"symptoms" binding:"required" `
 	Diagnosis string ` json:"diagnosis" binding:"required" `
