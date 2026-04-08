@@ -22,8 +22,7 @@ type BloodPressure struct{
 }
 
 type Health_Metrics struct{
-    Id string ` json:"id" `
-    P_id string ` json:"p_id"  binding:"required" `
+    Id string ` json:"id" binding:"required"`
     Bp BloodPressure ` json:"bp"  binding:"required" `
     Temp float64 ` json:"temp"  binding:"required" `
     Heart_Rate int64 ` json:"heart_rate"  binding:"required" `
