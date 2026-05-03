@@ -23,10 +23,9 @@ func PatientRoutes(router *gin.Engine) {
     patientGroup.GET("/getAppointment", controller.GetAppointment) // d_id to be fixed
     // patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
     patientGroup.POST("/bookAppointment", controller.PostAppointment)
-    patientGroup.GET("/healthmetrics",controller.GetHealthMetrics)
-    patientGroup.GET("/healthsummary",controller.GetHealthSummary)
-    patientGroup.GET("/consultationdata",controller.GetConsultationData)
-
+    patientGroup.GET("/healthmetrics",controller.GetHealthMetrics) //working fine
+    patientGroup.GET("/healthsummary",controller.GetHealthSummary) //api bug
+    patientGroup.GET("/consultationdata",controller.GetConsultationData) //api bug
 }
 
 func DoctorRoutes(router *gin.Engine) {
