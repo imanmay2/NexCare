@@ -66,6 +66,7 @@ type DrugType struct {
 	Dosage string ` json:"dosage" `
 	Duration string ` json:"duration" `
 	Frequency string ` json:"frequency" `
+    Instruction string ` json:"instruction" `
 }
 
 type Consultation struct{
@@ -77,6 +78,6 @@ type Consultation struct{
 	Diagnosis string ` json:"diagnosis" binding:"required" `
 	Treatment string ` json:"treatment" binding:"required" `
 	Physical_examination string ` json:"physical_examination" binding:"required" `
-	Drug DrugType ` json:"drug" binding:"required" `
+	Drug []DrugType ` json:"drug" binding:"required" `
 	Investigations string ` json:"investigations" `
 }

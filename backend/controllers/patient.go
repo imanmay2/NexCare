@@ -7,6 +7,7 @@ import (
     "fmt"
     "github.com/gin-gonic/gin"
     "github.com/google/uuid"
+    "encoding/json"
 )
 
 func GetPatientInfo(ctx *gin.Context) {
@@ -126,9 +127,23 @@ func GetConsultationData(ctx *gin.Context){
         return
     }
     var consultData[] model.Consultation
+    var drugData []byte
     for rows.Next(){
         var data model.Consultation
-        rows.Scan(&data.Id,&data.Created_At,&data.Title,&data.Symptoms,&data.Diagnosis,&data.Treatment,&data.Physical_examination,&data.Drug,&data.Investigations)
+        err:=rows.Scan(&data.Id,&data.Created_At,&data.Title,&data.Symptoms,&data.Diagnosis,&data.Treatment,&data.Physical_examination,&drugData,&data.Investigations)
+        if err!=nil{
+            fmt.Println("Error occured ",err.Error())
+            return;
+        }
+        
+        if drugData!=nil{
+            err:=json.Unmarshal(drugData,&data.Drug)
+            if err!=nil{
+                fmt.Println("Error at drug : ",err.Error())
+                return;
+            }
+        }
+
         consultData=append(consultData,data)
     }
     ctx.IndentedJSON(200,gin.H{"Message":"Data Found","data":consultData,"success":true})
