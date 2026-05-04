@@ -43,6 +43,17 @@ interface User {
   email: string;
   language: "en" | "hi" | "pa";
   isOnBoarded?: boolean;
+  profile_url?: string
+}
+
+interface DoctorProfileData {
+  d_id: string;
+  name: string;
+  domain: string;
+  experience: number;
+  consultation_fee: number;
+  languages: string;
+  hospital: string;
 }
 
 export default function App() {
@@ -54,9 +65,60 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Check if users exists and set the USER
+  const [doctorData, setDoctorData] = useState<DoctorProfileData>({
+    d_id: "",
+    name: "",
+    domain: "",
+    experience: 0,
+    consultation_fee: 0,
+    languages: "",
+    hospital: ""
+  });
 
+  useEffect(() => {
+    setIsLoading(true);
+    const langCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("language="));
+    const lang = langCookie ? langCookie.split("=")[1] : "en";
+    setLanguage(lang as "en" | "hi" | "pa");
+    if (!langCookie)
+      document.cookie = `language=${lang}; path=/; max-age=31536000`; // Update cookie to ensure it persists
+    // Check if users exists and set the USER
+    axios
+      .get("http://localhost:8090/users/me", {
+        withCredentials: true,
+      })
+      .then(async (res) => {
+        if (res.status === 200) {
+          //get the language preference from the cookie and set it in the state
+          let userData = res.data.data;
+          userData.language = lang as "en" | "hi" | "pa";
+          if (userData.role === "doctor") {
+            // Check for doctor's on boarding..
+            try {
+              const res = await axios.get(
+                "http://localhost:8090/doctor/getInfo",
+                { withCredentials: true }
+              );
+              const data_: any = await res.data;
+              if (res.status === 200) {
+                setUser({ ...userData, isOnBoarded: data_.isOnBoarded });
+                setDoctorData(data_.data);
+              } else {
+                showToast(data_.Message, data_.success);
+              }
+            } catch (err) {
+              showToast("Error in Fetching Onboarding Status", false);
+            }
+          } else
+            setUser(userData);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching user data:", err);
+      })
+      .finally(() => setIsLoading(false));
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -113,6 +175,26 @@ export default function App() {
     };
   }
 
+  const addProfileData = async (data: DoctorProfileData) => {
+    try {
+      data.d_id = user?.id as string;
+      data.name = user?.name as string;
+      console.log("Adding Doctor Profile Data:", data);
+      const res = await axios.post(
+        "http://localhost:8090/doctor/addProfileData",
+        data,
+        { withCredentials: true }
+      );
+      const data_: any = await res.data;
+      if (res.status === 200) {
+        showToast(data_.Message, true);
+      } else {
+        showToast(data_.Message, false);
+      }
+    } catch (err) {
+      showToast("Error in Adding Doctor Profile Data", false);
+    }
+  };
 
   if (user) {
     switch (user.role) {
@@ -126,20 +208,27 @@ export default function App() {
           />
         );
       case "doctor":
+        console.log(user.isOnBoarded)
         if (user.isOnBoarded) {
           return (
             <DoctorDashboard
               user={user}
+              setUser={setUser}
               onLogout={logout}
               language={language}
               isOnline={isOnline}
+              data={doctorData}
+              setData={setDoctorData}
             />
           );
         } else if (!user.isOnBoarded) {
           return (
             <DoctorOnboarding
               onComplete={(data) => {
-                console.log("Professional Data:", data);
+                data.languages = data.languages.join(",");
+                data.consultation_fee = data.fee;
+                addProfileData(data);
+                setDoctorData(data);
                 setUser({ ...user, isOnBoarded: true });
               }}
               onLogout={logout}
@@ -220,7 +309,10 @@ export default function App() {
                           : "outline"
                       }
                       size="sm"
-                      onClick={() => setLanguage(lang)}
+                      onClick={() => {
+                        document.cookie = `language=${lang}; path=/; max-age=31536000`;
+                        setLanguage(lang);
+                      }}
                       className="px-3 py-1"
                     >
                       {languageLabels[lang]}

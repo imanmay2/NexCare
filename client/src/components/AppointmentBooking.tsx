@@ -6,6 +6,7 @@ import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Alert, AlertDescription } from './ui/alert';
+import { addMonths, startOfDay } from "date-fns"
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -164,7 +165,8 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
   };
 
   const t = translations[language];
-
+  const today = startOfDay(new Date())
+  const twoMonthsLater = addMonths(today, 2)
 
   //TODO  : fetch the available doctor info from the backend. 
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -172,17 +174,14 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
     const fetchDoctorData = async () => {
       const response = await axios.get("http://localhost:8090/patient/availableDoctor", { withCredentials: true })
       const doctorData: Doctor[] = response.data.data;
+      console.log("Doctor Data fetched is : ", doctorData);
       setDoctors(doctorData);
     }
     fetchDoctorData()
   }, [])
 
   //function to set the available time slots for the selected doctor and date.
- 
-
-
-  const getAvailableTimeSlots = (
-    availability: Record<string, Array<{ id:number,start: string; end: string }>>,
+  const getAvailableTimeSlots = (availability: Record<string, Array<{ id: number, start: string; end: string }>> | undefined,
     selectedDate: Date
   ): string[] => {
 
@@ -193,15 +192,15 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
          e.g. 9:00-11:00 ==> 9:00, 9:30, 10:00, 10:30
     */
 
-    
-
     // Step 1: Get day name
     const dayName = selectedDate.toLocaleDateString("en-US", {
       weekday: "long"
     });
-    console.log("Day Name:", dayName);
 
     // Step 2: Get slots for that day
+    if (!availability) {
+      return [];
+    }
     const daySlots = availability[dayName];
     if (!daySlots || daySlots.length === 0) {
       return [];
@@ -231,9 +230,10 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
         startMinutes += 30;
       }
     }
-    console.log("Generated Slots:", resultSlots);
     return resultSlots;
   };
+
+
 
   // const doctors: Doctor[] = [
   //   {
@@ -268,10 +268,11 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
   //   }
   // ];
 
-  const timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
-  ];
+  // const timeSlots = [
+  //   '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  //   '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
+  // ];
+
 
   const handleBookAppointment = async () => {
     if (!selectedDate || !selectedTime || !selectedDoctor || !symptoms.trim()) {
@@ -332,6 +333,9 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
     }
     setConsultationModal({ isOpen: true, appointment });
   };
+
+
+
 
   if (showBookingForm) {
     return (
@@ -405,7 +409,8 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  disabled={(date: Date) => date < new Date()}
+                  fromDate={today}
+                  toDate={twoMonthsLater}
                   className="rounded-md border"
                 />
               </CardContent>
@@ -418,23 +423,21 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-2">
-                    {timeSlots.map((time) => {
+                    {(() => {
                       const doctor = doctors.find(d => d.d_id === selectedDoctor);
-                      const isAvailable = doctor?.availability;
-
-                      return (
+                      const timeSlots = getAvailableTimeSlots(doctor?.availability, selectedDate);
+                      return timeSlots.map((time) => (
                         <Button
                           key={time}
                           variant={selectedTime === time ? "default" : "outline"}
                           size="sm"
                           onClick={() => setSelectedTime(time)}
-                          disabled={!isAvailable}
                           className="w-full"
                         >
                           {time}
                         </Button>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
                 </CardContent>
               </Card>

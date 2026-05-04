@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {
     Clock, Plus, Trash2, Calendar,
     Zap, ShieldAlert, Activity,
-    ArrowRight, Info, CheckCircle2
+    ArrowRight, Info, CheckCircle2,
+    Save
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "./ui/button";
@@ -17,60 +18,10 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 type TimeSlot = { id: number, start: string; end: string };
 type TimeSlots = Record<string, TimeSlot[]>;
 
-export default function PremiumSchedule() {
+export default function PremiumSchedule({ timeSlots, setTimeSlots }: { timeSlots: TimeSlots, setTimeSlots: React.Dispatch<React.SetStateAction<TimeSlots>> }) {
 
     const [isSOSOpen, setIsSOSOpen] = useState(false);
 
-    const [timeSlots, setTimeSlots] = useState<TimeSlots>({
-        "Monday": [
-            {
-                "id": Date.now(),
-                "start": "09:00",
-                "end": "17:00"
-            },
-            {
-                "id": Date.now() + 1,
-                "start": "18:00",
-                "end": "20:00"
-            }
-        ],
-        "Tuesday": [
-            {
-                "id": Date.now() + 2,
-                "start": "10:00",
-                "end": "16:00"
-            }
-        ],
-        "Wednesday": [
-            {
-                "id": Date.now() + 3,
-                "start": "09:00",
-                "end": "17:00"
-            }
-        ],
-        "Thursday": [
-            {
-                "id": Date.now() + 4,
-                "start": "11:00",
-                "end": "19:00"
-            }
-        ],
-        "Friday": [
-            {
-                "id": Date.now() + 5,
-                "start": "09:00",
-                "end": "17:00"
-            }
-        ],
-        "Saturday": [
-            {
-                "id": Date.now() + 6,
-                "start": "10:00",
-                "end": "14:00"
-            }
-        ],
-        "Sunday": []
-    });
 
     const addShift = (day: string) => {
         // Adding a new default slot (9am-5pm) for the specified day
@@ -88,8 +39,10 @@ export default function PremiumSchedule() {
         }));
     }
 
+
     return (
         <div className="max-w-[1400px] mx-auto p-8 space-y-8 animate-in fade-in duration-700">
+
 
 
             <div className="grid grid-cols-2 gap-6">
@@ -121,9 +74,19 @@ export default function PremiumSchedule() {
                                             {slot.start !== "Closed" ? <div style={{ padding: '6px' }} className="flex items-center justify-between gap-2 p-1.5 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
                                                 <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-lg border border-slate-100">
                                                     <Clock className="h-4 w-4 text-blue-600" />
-                                                    <input type="time" defaultValue={slot.start} className="bg-transparent font-bold text-sm outline-none" />
+                                                    <input type="time" value={slot.start} // controlled
+                                                        onChange={(e) => {
+                                                            const updatedSlots = [...timeSlots[day]];
+                                                            updatedSlots[sidx] = { ...slot, start: e.target.value };
+                                                            setTimeSlots({ ...timeSlots, [day]: updatedSlots });
+                                                        }} className="bg-transparent font-bold text-sm outline-none" />
                                                     <ArrowRight className="h-3 w-3 text-slate-300" />
-                                                    <input type="time" defaultValue={slot.end} className="bg-transparent font-bold text-sm outline-none" />
+                                                    <input type="time" value={slot.end} // controlled
+                                                        onChange={(e) => {
+                                                            const updatedSlots = [...timeSlots[day]];
+                                                            updatedSlots[sidx] = { ...slot, end: e.target.value };
+                                                            setTimeSlots({ ...timeSlots, [day]: updatedSlots });
+                                                        }} className="bg-transparent font-bold text-sm outline-none" />
                                                 </div>
                                                 <TooltipProvider>
                                                     <Tooltip>

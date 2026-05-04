@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	conn "nexcare/backend/config"
-	"nexcare/backend/model"
+	"nexcare/backend/models"
 	"nexcare/backend/util"
 	"time"
 
@@ -50,7 +51,9 @@ func PostUser(ctx *gin.Context) {
 		//setting up the jwt token.
 		ctx.SetCookie("token", token, 60*15, "/", "localhost", false, true)
 		ctx.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "localhost", false, true)
-		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true, "role": user.Role, "name": user.Name}) //sends the jwt token to frontend
+		ctx.Set("userID", user_id)
+		ctx.Set("email", user.Email)
+		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true, "id": user_id, "role": user.Role, "name": user.Name}) //sends the jwt token to frontend
 	} else if util.VerifyOTP(user.Email, user.Otp) && user.IsLogin {
 		//login
 		//function to fetch the user_id for passing into generate_JWT token.
@@ -67,7 +70,10 @@ func PostUser(ctx *gin.Context) {
 		ctx.SetCookie("token", token, 60*15, "/", "localhost", false, true)                     //setting up the token in the browser.
 		ctx.SetCookie("refresh_token", refresh_token, 3600*24*7, "/", "localhost", false, true) //setting up the token in the browser.
 
-		ctx.IndentedJSON(200, gin.H{"name": name, "role": role})
+		ctx.Set("userID", id)
+		ctx.Set("email", user.Email)
+
+		ctx.IndentedJSON(200, gin.H{"id": id, "name": name, "role": role})
 		return
 	} else {
 		ctx.IndentedJSON(401, gin.H{"Message": "Incorrect OTP entered.", "success": false})
@@ -141,4 +147,30 @@ func LogoutUser(ctx *gin.Context) {
 	ctx.SetCookie("refresh_token", "", -1, "/", "localhost", false, true)
 
 	ctx.IndentedJSON(200, gin.H{"Message": "User logged out successfully", "success": true})
+}
+
+func Me(ctx *gin.Context) {
+	//fetch the user details using the userID from the token and send it to the frontend.
+	refreshToken, err1 := ctx.Cookie("refresh_token")
+	if err1 != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": "Refresh Token not found in cookie", "success": false})
+		return
+	}
+	userID, email, err := util.VerifySignature(ctx, refreshToken)
+	ctx.Set("userID", userID)
+	ctx.Set("email", email)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	query := "select id,name,email,role,profile_url from users where id=$1"
+	row := conn.DB.QueryRow(context.Background(), query, userID)
+	var user model.User
+	err_ := row.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.ProfileURL)
+	if err_ != nil {
+		fmt.Println(err_)
+		ctx.IndentedJSON(500, gin.H{"Message": err_.Error(), "success": false})
+		return
+	}
+	ctx.IndentedJSON(200, gin.H{"data": user, "Message": "User Data Retrieved Successfully", "success": true})
 }

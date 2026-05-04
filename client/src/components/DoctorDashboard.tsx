@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -26,13 +26,18 @@ import {
   Scale,
   Ruler,
   PlusCircle,
-  Search
+  Search,
+  Save
 } from 'lucide-react';
 import { Input } from './ui/input';
 import { HealthMetricsOverlay } from './HealthMetricsOverlay';
 import { EditClinicalProfile } from './ClinicalProfileOverlay';
 import { Label } from './ui/label';
 import DoctorSchedule from './DoctorSchedule';
+import DoctorSettings from './DoctorSettings';
+import axios from 'axios';
+import { useError } from './ui/Toast';
+import { SPECIALIZATIONS } from '../utils/utils';
 
 interface User {
   id: string;
@@ -44,9 +49,12 @@ interface User {
 
 interface DoctorDashboardProps {
   user: User;
+  setUser: React.Dispatch<React.SetStateAction<User | null | undefined>>;
   onLogout: () => void;
   language: 'en' | 'hi' | 'pa';
   isOnline: boolean;
+  data?: any;
+  setData?: any
 }
 
 interface Consultation {
@@ -60,7 +68,11 @@ interface Consultation {
   urgency: 'low' | 'medium' | 'high';
 }
 
-export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDashboardProps) {
+
+type TimeSlot = { id: number, start: string; end: string };
+type TimeSlots = Record<string, TimeSlot[]>;
+
+export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, data, setData }: DoctorDashboardProps) {
   const [consultations] = useState<Consultation[]>([
     {
       id: '1',
@@ -94,8 +106,26 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
     }
   ]);
 
+  const { showToast } = useError();
   const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
   const [isClinicalProfileModalOpen, setIsClinicalProfileModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [timeSlots, setTimeSlots] = useState<TimeSlots>({
+  });
+
+  useEffect(() => {
+    axios.get("http://localhost:8090/doctor/getSchedule", { withCredentials: true })
+      .then((res) => {
+        const data = res.data;
+        if (res.status === 200) {
+          setTimeSlots(data.availability);
+        } else {
+          throw Error("Failed to fetch schedule");
+        }
+      }).catch((err) => {
+        showToast("Error in fetching schedule...", false);
+      })
+  }, [])
 
   const translations = {
     en: {
@@ -121,7 +151,8 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
       totalPatients: "Total Patients",
       pendingConsults: "Pending Consults",
       completedToday: "Completed Today",
-      avgRating: "Average Rating"
+      avgRating: "Average Rating",
+      settings: "Settings"
     },
     hi: {
       dashboard: "डॉक्टर डैशबोर्ड",
@@ -146,7 +177,8 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
       totalPatients: "कुल मरीज़",
       pendingConsults: "लंबित परामर्श",
       completedToday: "आज पूर्ण",
-      avgRating: "औसत रेटिंग"
+      avgRating: "औसत रेटिंग",
+      settings: "सेटिंग्स"
     },
     pa: {
       dashboard: "ਡਾਕਟਰ ਡੈਸ਼ਬੋਰਡ",
@@ -171,7 +203,8 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
       totalPatients: "ਕੁੱਲ ਮਰੀਜ਼",
       pendingConsults: "ਲੰਬਿਤ ਸਲਾਹ",
       completedToday: "ਅੱਜ ਪੂਰੇ",
-      avgRating: "ਔਸਤ ਰੇਟਿੰਗ"
+      avgRating: "ਔਸਤ ਰੇਟਿੰਗ",
+      settings: "ਸੈਟਿੰਗਸ"
     }
   };
 
@@ -204,6 +237,31 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
     }
   };
 
+  const handleSave = async () => {
+    setIsSaving(true);
+    console.log(timeSlots);
+
+    try {
+      const res = await axios.put("http://localhost:8090/doctor/setSchedule", {
+        d_id: user.id,
+        availability: timeSlots
+      }, { withCredentials: true })
+
+      const data = await res.data;
+      if (res.status === 200) {
+        showToast(data.Message, data.success);
+      } else {
+        throw Error("Failed to save schedule");
+      }
+    } catch (err) {
+      showToast("Error in saving schedule...", false);
+    }
+
+    setTimeout(() => {
+      setIsSaving(false);
+    }, 2000);
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -220,7 +278,7 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
                 <h1 className="text-xl font-semibold text-gray-900">
                   {t.welcome} {user.name}
                 </h1>
-                <p className="text-sm text-gray-600">General Medicine • Nabha Civil Hospital</p>
+                {data?.domain && data?.hospital && <p className="text-sm text-gray-600">{SPECIALIZATIONS.filter((s => s.value == data?.domain))[0].label || ''} • {data?.hospital || ''}</p>}
               </div>
             </div>
 
@@ -289,11 +347,11 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
         </div>
 
         <Tabs defaultValue="queue" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="queue">{t.consultationQueue}</TabsTrigger>
             <TabsTrigger value="patients">{t.patientRecords}</TabsTrigger>
-            {/* <TabsTrigger value="prescriptions">{t.prescriptions}</TabsTrigger> */}
             <TabsTrigger value="schedule">{t.schedule}</TabsTrigger>
+            <TabsTrigger value="settings">{t.settings}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="queue" className="space-y-6">
@@ -510,19 +568,41 @@ export function DoctorDashboard({ user, onLogout, language, isOnline }: DoctorDa
           <TabsContent value="schedule">
             <Card>
               <CardHeader>
-                <CardTitle>{t.schedule}</CardTitle>
-                <CardDescription>
-                  Manage your consultation schedule and availability
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{t.schedule}</CardTitle>
+                    <CardDescription>
+                      Manage your consultation schedule and availability
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {/* <div className="text-center py-12 text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>Schedule management interface would be implemented here</p>
-                  <p className="text-sm">Set availability, block time slots, and manage appointments</p>
-                </div> */}
-                <DoctorSchedule />
+                <DoctorSchedule timeSlots={timeSlots} setTimeSlots={setTimeSlots} />
               </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <Card>
+              <DoctorSettings user={user} setUser={setUser} data={data} setData={setData} />
             </Card>
           </TabsContent>
         </Tabs>

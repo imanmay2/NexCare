@@ -1,2 +1,44 @@
-node_modules
+
+
+# ========================
+# OS FILES
+# ========================
+.DS_Store
+
+# ========================
+# DEPENDENCIES
+# ========================
+node_modules/
+
+# ========================
+# BUILD OUTPUT
+# ========================
+dist/
+build/
+
+# ========================
+# ENV FILES (IMPORTANT)
+# ========================
 .env
+.env.local
+.env.development
+.env.production
+
+# ========================
+# LOG FILES
+# ========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ========================
+# IDE / EDITOR FILES
+# ========================
+.vscode/
+.idea/
+
+# ========================
+# MISC
+# ========================
+*.local
