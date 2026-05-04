@@ -49,6 +49,7 @@ interface User {
 
 interface DoctorDashboardProps {
   user: User;
+  setUser: React.Dispatch<React.SetStateAction<User | null | undefined>>;
   onLogout: () => void;
   language: 'en' | 'hi' | 'pa';
   isOnline: boolean;
@@ -71,7 +72,7 @@ interface Consultation {
 type TimeSlot = { id: number, start: string; end: string };
 type TimeSlots = Record<string, TimeSlot[]>;
 
-export function DoctorDashboard({ user, onLogout, language, isOnline, data, setData }: DoctorDashboardProps) {
+export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, data, setData }: DoctorDashboardProps) {
   const [consultations] = useState<Consultation[]>([
     {
       id: '1',
@@ -277,7 +278,7 @@ export function DoctorDashboard({ user, onLogout, language, isOnline, data, setD
                 <h1 className="text-xl font-semibold text-gray-900">
                   {t.welcome} {user.name}
                 </h1>
-                {data && <p className="text-sm text-gray-600">{SPECIALIZATIONS.filter((s => s.value == data?.domain))[0].label || 'Loading'} • {data?.hospital || 'Loading'}</p>}
+                {data?.domain && data?.hospital && <p className="text-sm text-gray-600">{SPECIALIZATIONS.filter((s => s.value == data?.domain))[0].label || ''} • {data?.hospital || ''}</p>}
               </div>
             </div>
 
@@ -601,7 +602,7 @@ export function DoctorDashboard({ user, onLogout, language, isOnline, data, setD
 
           <TabsContent value="settings">
             <Card>
-              <DoctorSettings user={user} data={data} setData={setData} />
+              <DoctorSettings user={user} setUser={setUser} data={data} setData={setData} />
             </Card>
           </TabsContent>
         </Tabs>

@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	conn "nexcare/backend/config"
 	"nexcare/backend/models"
 	"nexcare/backend/util"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -94,7 +98,7 @@ func AddProfileData(ctx *gin.Context) {
 }
 
 func UpdateProfileData(ctx *gin.Context) {
-	// Update the profile data and professional data of the doctor
+	// Update the professional data of the doctor
 	var doctorInfo model.DoctorInfo
 	query := "update doctor set consultation_fee=$1,rating=$2,languages=$3,experience=$4,domain=$5,hospital=$6 where d_id=$7"
 	err := ctx.ShouldBindJSON(&doctorInfo)
@@ -103,6 +107,13 @@ func UpdateProfileData(ctx *gin.Context) {
 		return
 	}
 	_, err = conn.DB.Exec(context.Background(), query, doctorInfo.Fee, doctorInfo.Rating, doctorInfo.Languages, doctorInfo.Experience, doctorInfo.Domain, doctorInfo.Hospital, doctorInfo.D_id)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+
+	query = "update users set name=$1 where id=$2"
+	_, err = conn.DB.Exec(context.Background(), query, doctorInfo.Name, doctorInfo.D_id)
 	if err != nil {
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		return
@@ -118,4 +129,125 @@ func GetAppointments() {
 func GetPatientRecords() {
 	// Get the medical records of the selected patient
 
+}
+
+func UploadProfilePic(ctx *gin.Context) {
+	userID := ctx.MustGet("userID").(string)
+
+	file, err := ctx.FormFile("image")
+	if err != nil {
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+		return
+	}
+
+	// Open file
+	src, err := file.Open()
+	if err != nil {
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "File error"})
+		return
+	}
+	defer src.Close()
+
+	fileExt := filepath.Ext(file.Filename)
+	fileName := userID + fileExt
+	filePath := "doctors/" + fileName
+
+	supabaseUrl := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+	uploadUrl := fmt.Sprintf("%s/storage/v1/object/profile-pictures/%s", supabaseUrl, filePath)
+
+	req, _ := http.NewRequest("PUT", uploadUrl, src)
+	req.Header.Set("Authorization", "Bearer "+supabaseKey)
+	req.Header.Set("Content-Type", file.Header.Get("Content-Type"))
+	req.Header.Set("x-upsert", "true")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode >= 300 {
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Upload failed", "success": false})
+		return
+	}
+
+	publicUrl := fmt.Sprintf("%s/storage/v1/object/public/profile-pictures/%s", supabaseUrl, filePath)
+
+	// Save URL in PostgreSQL
+
+	query := "update users set profile_url=$1 where id=$2"
+	_, err = conn.DB.Exec(context.Background(), query, publicUrl, userID)
+	if err != nil {
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	ctx.IndentedJSON(http.StatusOK, gin.H{
+		"Message": "Uploaded successfully",
+		"url":     publicUrl,
+		"success": true,
+	})
+}
+
+func DeleteProfilePic(ctx *gin.Context) {
+	userID := ctx.MustGet("userID").(string)
+
+	var profileURL string
+	err := conn.DB.QueryRow(
+		context.Background(),
+		"SELECT profile_url FROM users WHERE id=$1",
+		userID,
+	).Scan(&profileURL)
+
+	if err != nil || profileURL == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"Message": "No profile picture found",
+			"success": false,
+		})
+		return
+	}
+
+	// Extract file path
+	parts := strings.Split(profileURL, "/profile-pictures/")
+	if len(parts) != 2 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"Message": "Invalid profile URL format",
+			"success": false,
+		})
+		return
+	}
+
+	filePath := parts[1]
+
+	supabaseUrl := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+	deleteURL := fmt.Sprintf(
+		"%s/storage/v1/object/profile-pictures/%s",
+		supabaseUrl,
+		filePath,
+	)
+
+	req, _ := http.NewRequest("DELETE", deleteURL, nil)
+	req.Header.Set("Authorization", "Bearer "+supabaseKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode >= 300 {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"Message": "Delete failed",
+			"success": false,
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	// Clear DB
+	_, _ = conn.DB.Exec(
+		context.Background(),
+		"UPDATE users SET profile_url=NULL WHERE id=$1",
+		userID,
+	)
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"Message": "Profile picture deleted",
+		"success": true,
+	})
 }

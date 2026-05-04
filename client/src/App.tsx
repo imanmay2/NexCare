@@ -213,6 +213,7 @@ export default function App() {
           return (
             <DoctorDashboard
               user={user}
+              setUser={setUser}
               onLogout={logout}
               language={language}
               isOnline={isOnline}
