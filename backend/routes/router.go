@@ -20,12 +20,12 @@ func PatientRoutes(router *gin.Engine) {
     patientGroup.Use(middleware.JWTAuthMiddleware())
     patientGroup.GET("/", controller.GetPatientInfo)
     patientGroup.GET("/availableDoctor", controller.GetDoctorInfo)
-    patientGroup.GET("/getAppointment", controller.GetAppointment) // d_id to be fixed
+    patientGroup.GET("/getAppointment", controller.GetAppointment) 
     // patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
     patientGroup.POST("/bookAppointment", controller.PostAppointment)
-    patientGroup.GET("/healthmetrics",controller.GetHealthMetrics) //working fine
-    patientGroup.GET("/healthsummary",controller.GetHealthSummary) //api bug
-    patientGroup.GET("/consultationdata",controller.GetConsultationData) //api bug
+    patientGroup.GET("/healthmetrics",controller.GetHealthMetrics)
+    patientGroup.GET("/healthsummary",controller.GetHealthSummary) //"imp" fetching error
+    patientGroup.GET("/consultationdata",controller.GetConsultationData) 
 }
 
 func DoctorRoutes(router *gin.Engine) {
