@@ -3,7 +3,6 @@ package routes
 import (
     controller "nexcare/backend/controllers"
     "nexcare/backend/middleware"
-
     "github.com/gin-gonic/gin"
 )
 
@@ -24,8 +23,9 @@ func PatientRoutes(router *gin.Engine) {
     // patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
     patientGroup.POST("/bookAppointment", controller.PostAppointment)
     patientGroup.GET("/healthmetrics",controller.GetHealthMetrics)
-    patientGroup.GET("/healthsummary",controller.GetHealthSummary) //"imp" fetching error
+    patientGroup.GET("/healthsummary",controller.GetHealthSummary) 
     patientGroup.GET("/consultationdata",controller.GetConsultationData) 
+    patientGroup.GET("/labResults",controller.GetLabResults) // in progress
 }
 
 func DoctorRoutes(router *gin.Engine) {

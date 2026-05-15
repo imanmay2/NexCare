@@ -45,8 +45,11 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 			return
 		}
-		query := "insert into users values($1,$2,$3,$4)"
-		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email)
+		// if db is not empty
+		general_id:=util.Generate_General_Id(ctx,user.Name)
+		
+		query := "insert into users(id,name,role,email,phn_no,gen_id) values($1,$2,$3,$4,$5,$6)"
+		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email,general_id)
 		if err != nil {
 			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
 			return

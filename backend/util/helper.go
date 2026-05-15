@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	conn "nexcare/backend/config"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 func GetUserDetails(email_id string) (id string, name string, role string) {
@@ -35,4 +38,31 @@ func GetUserIdFromToken(ctx *gin.Context) (string, error) {
 		return "", fmt.Errorf("userId not found in context")
 	}
 	return userId.(string), nil
+}
+
+
+func Generate_General_Id(ctx *gin.Context,name string) string{
+	name=strings.ToUpper(name) ///upper case the name to maintain the format of general id
+	var prev_id string
+	query:=` select gen_id from users order by created_at desc limit 1 `
+	err:=conn.DB.QueryRow(context.Background(),query,).Scan(&prev_id)
+	if(err==pgx.ErrNoRows){
+		fmt.Printf("No previous id.")
+		gen_id:=fmt.Sprintf("PX001%s%s",string(name[0]),string(name[1]))
+		return gen_id
+	}
+	if(err!=nil){
+		fmt.Printf("Error occured : %s",err.Error())
+		return ""
+	}
+
+	//fetching the digits
+	id_:= prev_id[2:6]
+	num,err:=strconv.Atoi(id_)
+	if(err!=nil){
+		fmt.Printf("Error in convertion %s",err.Error())
+		return ""
+	}
+	gen_id:=fmt.Sprintf("PX%d%s%s",num+1,string(name[0]),string(name[1]))
+	return gen_id
 }

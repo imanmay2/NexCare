@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	conn "nexcare/backend/config"
 	"nexcare/backend/models"
+	"net/http"
 )
 
 func GetPatientInfo(ctx *gin.Context) {
@@ -159,4 +160,9 @@ func GetConsultationData(ctx *gin.Context) {
 		consultData = append(consultData, data)
 	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Data Found", "data": consultData, "success": true})
+}
+
+func GetLabResults(ctx *gin.Context){
+	ctx.IndentedJSON(http.StatusAccepted,gin.H{"Data":"Welcome to the Lab Results section."})
+	// return;
 }
