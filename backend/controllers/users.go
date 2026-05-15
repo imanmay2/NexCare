@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	conn "nexcare/backend/config"
 	"nexcare/backend/models"
 	"nexcare/backend/util"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -174,63 +171,64 @@ func Me(ctx *gin.Context) {
 	var user model.User
 	err_ := row.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.ProfileURL)
 	if err_ != nil {
+		fmt.Println(err_)
 		ctx.IndentedJSON(500, gin.H{"Message": err_.Error(), "success": false})
 		return
 	}
 	ctx.IndentedJSON(200, gin.H{"data": user, "Message": "User Data Retrieved Successfully", "success": true})
 }
 
-func UploadProfilePic(ctx *gin.Context) {
-	userID := ctx.MustGet("userID").(string)
+// func UploadProfilePic(ctx *gin.Context) {
+// 	userID := ctx.MustGet("userID").(string)
 
-	file, err := ctx.FormFile("image")
-	if err != nil {
-		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
-		return
-	}
+// 	file, err := ctx.FormFile("image")
+// 	if err != nil {
+// 		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+// 		return
+// 	}
 
-	// Open file
-	src, err := file.Open()
-	if err != nil {
-		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "File error"})
-		return
-	}
-	defer src.Close()
+// 	// Open file
+// 	src, err := file.Open()
+// 	if err != nil {
+// 		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "File error"})
+// 		return
+// 	}
+// 	defer src.Close()
 
-	fileExt := filepath.Ext(file.Filename)
-	fileName := userID + "." + fileExt
-	filePath := "doctors/" + fileName
+// 	fileExt := filepath.Ext(file.Filename)
+// 	fileName := userID + "." + fileExt
+// 	filePath := "doctors/" + fileName
 
-	supabaseUrl := os.Getenv("SUPABASE_URL")
-	supabaseKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+// 	supabaseUrl := os.Getenv("SUPABASE_URL")
+// 	supabaseKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-	uploadUrl := fmt.Sprintf("%s/storage/v1/object/profile-pictures/%s", supabaseUrl, filePath)
+// 	uploadUrl := fmt.Sprintf("%s/storage/v1/object/profile-pictures/%s", supabaseUrl, filePath)
 
-	req, _ := http.NewRequest("POST", uploadUrl, src)
-	req.Header.Set("Authorization", "Bearer "+supabaseKey)
-	req.Header.Set("Content-Type", file.Header.Get("Content-Type"))
-	req.Header.Set("x-upsert", "true")
+// 	req, _ := http.NewRequest("POST", uploadUrl, src)
+// 	req.Header.Set("Authorization", "Bearer "+supabaseKey)
+// 	req.Header.Set("Content-Type", file.Header.Get("Content-Type"))
+// 	req.Header.Set("x-upsert", "true")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode >= 300 {
-		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Upload failed", "success": false})
-		return
-	}
+// 	client := &http.Client{}
+// 	resp, err := client.Do(req)
+// 	if err != nil || resp.StatusCode >= 300 {
+// 		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Upload failed", "success": false})
+// 		return
+// 	}
 
-	publicUrl := fmt.Sprintf("%s/storage/v1/object/public/profile-pictures/%s", supabaseUrl, filePath)
+// 	publicUrl := fmt.Sprintf("%s/storage/v1/object/public/profile-pictures/%s", supabaseUrl, filePath)
 
-	// Save URL in PostgreSQL
+// 	// Save URL in PostgreSQL
 
-	query := "update users set profile_url=$1 where id=$2"
-	_, err = conn.DB.Exec(context.Background(), query, publicUrl, userID)
-	if err != nil {
-		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": err.Error(), "success": false})
-		return
-	}
-	ctx.IndentedJSON(http.StatusOK, gin.H{
-		"Message": "Uploaded successfully",
-		"url":     publicUrl,
-		"success": true,
-	})
-}
+// 	query := "update users set profile_url=$1 where id=$2"
+// 	_, err = conn.DB.Exec(context.Background(), query, publicUrl, userID)
+// 	if err != nil {
+// 		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": err.Error(), "success": false})
+// 		return
+// 	}
+// 	ctx.IndentedJSON(http.StatusOK, gin.H{
+// 		"Message": "Uploaded successfully",
+// 		"url":     publicUrl,
+// 		"success": true,
+// 	})
+// }

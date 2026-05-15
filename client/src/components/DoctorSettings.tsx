@@ -55,9 +55,12 @@ interface DoctorSettingsProps {
         id: string;
         name: string;
         email: string;
+        role: string;
         language: 'en' | 'hi' | 'pa';
         profile_url?: string;
     };
+
+    setUser?: any;
 
     data?: {
         d_id: string;
@@ -79,7 +82,7 @@ interface NotificationSetting {
     enabled: boolean;
 }
 
-export function DoctorSettings({ user: propUser, data, setData }: DoctorSettingsProps) {
+export function DoctorSettings({ user, setUser, data, setData }: DoctorSettingsProps) {
     const [activeTab, setActiveTab] = useState('profile');
     const [isSaving, setIsSaving] = useState(false);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
@@ -88,20 +91,10 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
 
     const { showToast } = useError();
 
-    const [imageFile, setImageFile] = useState<File>();
-
-    // Mock user data - in real app, this would come from props/context
-    const [user, setUser] = useState(propUser || {
-        id: '',
-        name: '',
-        email: '',
-        language: 'en' as const,
-    });
-
     // Profile form state
     const [profileForm, setProfileForm] = useState({
-        name: user.name,
-        email: user.email,
+        name: user?.name,
+        email: user?.email,
         specialization: data?.domain || '',
         hospital: data?.hospital || '',
         experience: data?.experience || 0,
@@ -155,7 +148,7 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
     });
 
     // Language preferences
-    const [language, setLanguage] = useState<'en' | 'hi' | 'pa'>(user.language);
+    const [language, setLanguage] = useState<'en' | 'hi' | 'pa'>(user?.language || 'en');
 
     const translations = {
         en: {
@@ -325,10 +318,10 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
         setIsSaving(true);
 
         //Save
-        if (profileForm.name && profileForm.consultationFee && profileForm.languages.length > 0) {
+        if (profileForm.experience && profileForm.consultationFee && profileForm.languages.length > 0) {
             try {
                 const res = await axios.put('http://localhost:8090/doctor/updateProfileData', {
-                    d_id: user.id,
+                    d_id: user?.id,
                     name: profileForm.name,
                     consultation_fee: profileForm.consultationFee,
                     languages: profileForm.languages.join(','),
@@ -341,7 +334,7 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
                     setIsSaving(false);
                     setData({
                         ...data,
-                        d_id: user.id,
+                        d_id: user?.id,
                         name: profileForm.name,
                         consultation_fee: profileForm.consultationFee,
                         languages: profileForm.languages.join(','),
@@ -349,6 +342,7 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
                         domain: profileForm.specialization,
                         hospital: profileForm.hospital
                     })
+                    setUser({ ...user, name: profileForm.name })
                     // Hide success alert after 3 seconds
                     setTimeout(() => {
                         setShowSuccessAlert(false);
@@ -357,31 +351,6 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
             } catch (err) {
                 showToast("An error occurred while saving changes. Please try again.", false);
             }
-
-            const formData = new FormData();
-            console.log(imageFile);
-            try {
-                formData.append("image", imageFile!);
-            } catch (err) {
-                console.error(err);
-            }
-
-            axios.post(
-                "http://localhost:8090/doctor/uploadProfilePic",
-                formData,
-                {
-                    withCredentials: true,
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                }
-            ).then((res) => {
-                if (res.status === 200)
-                    showToast("Sucessfully uploaded", true);
-
-            }).catch((_) => {
-                showToast("Error Encountered", false);
-            })
 
         } else {
             setIsSaving(false);
@@ -397,10 +366,6 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
             )
         );
     };
-
-    // const uploadPhoto = (file: File) => {
-    //     
-    // };
 
     const uploadPhoto = () => {
         fileInputRef.current?.click();
@@ -418,14 +383,46 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
 
         setPreview(URL.createObjectURL(file));
 
-        setImageFile(file);
+
+        const formData = new FormData();
+        try {
+            formData.append("image", file);
+        } catch (err) {
+            console.error(err);
+        }
+
+        axios.post(
+            "http://localhost:8090/doctor/uploadProfilePic",
+            formData,
+            {
+                withCredentials: true,
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        ).then((res) => {
+            if (res.status === 200)
+                showToast("Sucessfully uploaded", true);
+
+        }).catch((_) => {
+            showToast("Error Encountered", false);
+        })
 
     };
 
 
-    const removePhoto = () => {
-        setPreview(null);
-        fileInputRef.current!.value = ""
+    const removePhoto = async () => {
+        if ((fileInputRef.current!.value != "" && fileInputRef.current!.value != null && fileInputRef.current!.value != undefined) || user?.profile_url) {
+            const res = await axios.delete("http://localhost:8090/doctor/deleteProfilePic", { withCredentials: true })
+            const data = await res.data;
+
+            if (res.status === 200) {
+                setPreview(null);
+                setUser({ ...user, profile_url: "" })
+                fileInputRef.current!.value = ""
+            }
+            showToast(data.Message, data.success)
+        }
     }
 
     return (
@@ -504,9 +501,9 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
                             <CardContent className="p-6">
                                 <div className="flex items-center space-x-6">
                                     <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-                                        <AvatarImage src={preview || user.profile_url} />
+                                        <AvatarImage src={preview || user?.profile_url} />
                                         <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl">
-                                            {user.name.split(' ').map(n => n[0]).join('')}
+                                            {user?.name.split(' ').map(n => n[0]).join('')}
                                         </AvatarFallback>
                                     </Avatar>
 
@@ -552,7 +549,7 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
                                         className="bg-white border-gray-200"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 pointer-events-none text-gray-500">
                                     <Label htmlFor="email">{t.emailAddress}</Label>
                                     <Input
                                         id="email"
@@ -873,7 +870,7 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
                             </Card>
 
                             {/* Change Password */}
-                            <Card className="border border-gray-200">
+                            {/* <Card className="border border-gray-200">
                                 <CardHeader>
                                     <CardTitle className="text-lg font-semibold">{t.changePassword}</CardTitle>
                                 </CardHeader>
@@ -910,7 +907,7 @@ export function DoctorSettings({ user: propUser, data, setData }: DoctorSettings
                                         {t.changePassword}
                                     </Button>
                                 </CardContent>
-                            </Card>
+                            </Card> */}
                         </div>
                     </TabsContent>
 

@@ -29,14 +29,15 @@ func PatientRoutes(router *gin.Engine) {
 }
 
 func DoctorRoutes(router *gin.Engine) {
-    doctorGroup := router.Group("/doctor")
-    doctorGroup.Use(middleware.JWTAuthMiddleware())
-    doctorGroup.POST("/addProfileData", controller.AddProfileData)
-    doctorGroup.PUT("/updateProfileData", controller.UpdateProfileData)
-    doctorGroup.GET("/getSchedule", controller.GetSchedule)
-    doctorGroup.PUT("/setSchedule", controller.SetSchedule)
-    doctorGroup.GET("/getInfo", controller.GetInfo)
-    doctorGroup.POST("/uploadProfilePic", controller.UploadProfilePic)
-    // doctorGroup.GET("/getAppointments",controller.GetAppointments)
-    // doctorGroup.GET("/getPatientRecords",controller.GetPatientRecords)
+	doctorGroup := router.Group("/doctor")
+	doctorGroup.Use(middleware.JWTAuthMiddleware())
+	doctorGroup.POST("/addProfileData", controller.AddProfileData)
+	doctorGroup.PUT("/updateProfileData", controller.UpdateProfileData)
+	doctorGroup.GET("/getSchedule", controller.GetSchedule)
+	doctorGroup.PUT("/setSchedule", controller.SetSchedule)
+	doctorGroup.GET("/getInfo", controller.GetInfo)
+	doctorGroup.POST("/uploadProfilePic", controller.UploadProfilePic)
+	doctorGroup.DELETE("/deleteProfilePic", controller.DeleteProfilePic)
+	// doctorGroup.GET("/getAppointments",controller.GetAppointments)
+	// doctorGroup.GET("/getPatientRecords",controller.GetPatientRecords)
 }
