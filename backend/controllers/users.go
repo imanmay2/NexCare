@@ -8,7 +8,7 @@ import (
 	"nexcare/backend/models"
 	"nexcare/backend/util"
 	"time"
-
+	"net/http"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -32,8 +32,11 @@ func PostUser(ctx *gin.Context) {
 		}
 		
 		// if db is not empty
-		general_id:=util.Generate_General_Id(ctx,user.Name)
-		
+		general_id:=util.Generate_General_Id(ctx,user.Name,user.Role)
+		if(general_id=="NULL"){
+			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in generating General Id", "success": false})
+			return
+		}
 		query := "insert into users(id,name,role,email,gen_id) values($1,$2,$3,$4,$5)"
 		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email,general_id)
 		if err != nil {

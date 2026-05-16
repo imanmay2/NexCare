@@ -7,7 +7,7 @@ import (
 	conn "nexcare/backend/config"
 	"strconv"
 	"strings"
-
+	"time"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 )
@@ -40,29 +40,53 @@ func GetUserIdFromToken(ctx *gin.Context) (string, error) {
 	return userId.(string), nil
 }
 
+func Decide_first2Char(role string) string {
+	var char_ string
+	switch role {
+	case "patient":
+		char_ = "PX"
+	case "doctor":
+		char_ = "DR"
+	case "pharmacy":
+		char_ = "PH"
+	}
+	str:=time.Now().Format("010206") //MMDDYY
+	return str[4:]+char_
+}
 
-func Generate_General_Id(ctx *gin.Context,name string) string{
-	name=strings.ToUpper(name) ///upper case the name to maintain the format of general id
+func Generate_General_Id(ctx *gin.Context, name string, role string) string {
+	name = strings.ToUpper(name) //upper case the name to maintain the format of general id
+	role = strings.ToLower(role)
 	var prev_id string
-	query:=` select gen_id from users order by created_at desc limit 1 `
-	err:=conn.DB.QueryRow(context.Background(),query,).Scan(&prev_id)
-	if(err==pgx.ErrNoRows){
+	query := ` select gen_id from users where role=$1 order by created_at desc limit 1 `
+	err := conn.DB.QueryRow(context.Background(), query, role).Scan(&prev_id)
+	if err == pgx.ErrNoRows || prev_id == "" {
 		fmt.Printf("No previous id.")
-		gen_id:=fmt.Sprintf("PX001%s%s",string(name[0]),string(name[1]))
+		gen_id := fmt.Sprintf("%s0001",Decide_first2Char(role))
 		return gen_id
 	}
-	if(err!=nil){
-		fmt.Printf("Error occured : %s",err.Error())
-		return ""
+	if err != nil {
+		fmt.Printf("Error occured__ : %s", err.Error())
+		return "NULL"
 	}
 
 	//fetching the digits
-	id_:= prev_id[2:6]
-	num,err:=strconv.Atoi(id_)
-	if(err!=nil){
-		fmt.Printf("Error in convertion %s",err.Error())
-		return ""
+	id_ := prev_id[4:]
+	num, err := strconv.Atoi(id_)
+	if err != nil {
+		fmt.Printf("Error in convertion %s", err.Error())
+		return "NULL"
 	}
-	gen_id:=fmt.Sprintf("PX%d%s%s",num+1,string(name[0]),string(name[1]))
+	var num_str string
+	if num < 9 {
+		num_str = fmt.Sprintf("000%d", num+1)
+	} else if num < 99 {
+		num_str = fmt.Sprintf("00%d", num+1)
+	} else if num < 999 {
+		num_str = fmt.Sprintf("0%d", num+1)
+	} else {
+		num_str = fmt.Sprintf("%d", num+1)
+	}
+	gen_id := fmt.Sprintf("%s%s",Decide_first2Char(role), num_str)
 	return gen_id
 }
