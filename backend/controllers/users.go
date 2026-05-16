@@ -30,6 +30,16 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(500, gin.H{"Message": "Couldn't generate JWT Token", "success": false})
 			return
 		}
+		
+		// if db is not empty
+		general_id:=util.Generate_General_Id(ctx,user.Name)
+		
+		query := "insert into users(id,name,role,email,gen_id) values($1,$2,$3,$4,$5)"
+		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email,general_id)
+		if err != nil {
+			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
+			return
+		}
 		//generating the refreshtoken and insert into the db
 		refreshToken, err := util.GenerateRefreshToken(user_id, user.Email)
 		if err != nil {
@@ -40,15 +50,6 @@ func PostUser(ctx *gin.Context) {
 		_, err = conn.DB.Exec(context.Background(), q1, uuid.New().String(), user_id, refreshToken, time.Now(), time.Now().Add(7*24*time.Hour))
 		if err != nil {
 			ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
-			return
-		}
-		// if db is not empty
-		general_id:=util.Generate_General_Id(ctx,user.Name)
-		
-		query := "insert into users(id,name,role,email,phn_no,gen_id) values($1,$2,$3,$4,$5,$6)"
-		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email,general_id)
-		if err != nil {
-			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
 			return
 		}
 		//setting up the jwt token.
