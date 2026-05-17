@@ -8,7 +8,7 @@ import (
 	"nexcare/backend/models"
 	"nexcare/backend/util"
 	"time"
-
+	"net/http"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -30,6 +30,19 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(500, gin.H{"Message": "Couldn't generate JWT Token", "success": false})
 			return
 		}
+		
+		// if db is not empty
+		general_id:=util.Generate_General_Id(ctx,user.Name,user.Role)
+		if(general_id=="NULL"){
+			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in generating General Id", "success": false})
+			return
+		}
+		query := "insert into users(id,name,role,email,gen_id) values($1,$2,$3,$4,$5)"
+		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email,general_id)
+		if err != nil {
+			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
+			return
+		}
 		//generating the refreshtoken and insert into the db
 		refreshToken, err := util.GenerateRefreshToken(user_id, user.Email)
 		if err != nil {
@@ -40,12 +53,6 @@ func PostUser(ctx *gin.Context) {
 		_, err = conn.DB.Exec(context.Background(), q1, uuid.New().String(), user_id, refreshToken, time.Now(), time.Now().Add(7*24*time.Hour))
 		if err != nil {
 			ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
-			return
-		}
-		query := "insert into users values($1,$2,$3,$4)"
-		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email)
-		if err != nil {
-			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
 			return
 		}
 		//setting up the jwt token.
@@ -174,3 +181,4 @@ func Me(ctx *gin.Context) {
 	}
 	ctx.IndentedJSON(200, gin.H{"data": user, "Message": "User Data Retrieved Successfully", "success": true})
 }
+
