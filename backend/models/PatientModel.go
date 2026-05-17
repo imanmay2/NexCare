@@ -1,7 +1,7 @@
 package model
 
 import (
-    "time"
+	"time"
 )
 
 
@@ -80,4 +80,20 @@ type Consultation struct{
 	Physical_examination string ` json:"physical_examination" binding:"required" `
 	Drug []DrugType ` json:"drug" binding:"required" `
 	Investigations string ` json:"investigations" `
+}
+
+
+type TestValues  struct{
+    Value float64 ` json:"value" binding:"required" `
+    Unit string ` json:"unit" binding:"required" `
+}
+
+
+type LabResult struct{
+    Id string ` json:"id" binding:"required" `
+    P_id string ` json:"p_id" binding:"required" `
+    D_id string ` json:"d_id" binding:"required" `
+    Test_group string ` json:"test_group" binding:"required" `
+    Results map[string]TestValues ` json:"results"  binding:"required" `
+    Created_At time.Time ` json:"created_at" `
 }

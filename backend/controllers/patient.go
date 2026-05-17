@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"net/http"
 	conn "nexcare/backend/config"
 	"nexcare/backend/models"
-	"net/http"
+	// "os/user"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetPatientInfo(ctx *gin.Context) {
@@ -46,7 +48,7 @@ func GetAppointment(ctx *gin.Context) {
 	for rows.Next() {
 		//upcoming.
 		var appointment model.Appointment
-		rows.Scan(&appointment.Id, &appointment.D_id,  &appointment.Date,&appointment.DoctorName,&appointment.Status, &appointment.Symptom, &appointment.Time, &appointment.Type)
+		rows.Scan(&appointment.Id, &appointment.D_id, &appointment.Date, &appointment.DoctorName, &appointment.Status, &appointment.Symptom, &appointment.Time, &appointment.Type)
 		appointmentData = append(appointmentData, appointment)
 	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Data fetched successfully", "success": true, "data": appointmentData})
@@ -117,14 +119,14 @@ func GetHealthSummary(ctx *gin.Context) {
 			err := json.Unmarshal(contactData, &summ.Contact)
 			if err != nil {
 				fmt.Println("Error occured at Contact unmarshal : ", err.Error())
-				return;
+				return
 			}
 		}
 		if menstrualData != nil {
 			err := json.Unmarshal(menstrualData, &summ.Menstrual_History)
 			if err != nil {
 				fmt.Println("Error occured in menstrual unmarshal : ", err.Error())
-				return;
+				return
 			}
 		}
 		summary = append(summary, summ)
@@ -160,9 +162,35 @@ func GetConsultationData(ctx *gin.Context) {
 		consultData = append(consultData, data)
 	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Data Found", "data": consultData, "success": true})
-}
+} 
 
-func GetLabResults(ctx *gin.Context){
-	ctx.IndentedJSON(http.StatusAccepted,gin.H{"Data":"Welcome to the Lab Results section."})
-	// return;
+// / fetch the lab result for the particular patient.
+func GetLabResults(ctx *gin.Context) {
+	userID := ctx.GetString("userID") // patient_id
+	query := ` select lr.id,lr.p_id,lr.d_id,lr.test_group,lr.created_at,jsonb_object_agg(tv.key,jsonb_build_object('value',tv.value,'unit',tv.unit)) as results from lab_result lr join test_values tv on tv.id=ANY(lr.test_id) where p_id=$1 group by lr.id `
+	row,err:=conn.DB.Query(context.Background(),query,userID)
+	if(err!=nil){
+		fmt.Println("Error in fetching lab result : ",err.Error())
+		ctx.IndentedJSON(500, gin.H{"Message": "Error in fetching lab result", "success": false})
+		return
+	}
+	var results[] model.LabResult
+	var rawjson []byte
+	for row.Next(){
+		var data model.LabResult
+		err:=row.Scan(&data.Id,&data.P_id,&data.D_id,&data.Test_group,&data.Created_At,&rawjson)
+		if err!=nil{
+			fmt.Printf("Error in scanning lab result : %s",err.Error())
+			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in fetching lab result", "success": false})
+			return
+		}
+		err=json.Unmarshal(rawjson,&data.Results)
+		if err!=nil{
+			fmt.Println("Error in unmarshal in lab results ",err.Error())
+			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in unmarshal of lab result", "success": false})
+			return
+		}
+		results=append(results,data)
+	}
+	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Lab Result fetched successfully","data": results, "success": true})	
 }
