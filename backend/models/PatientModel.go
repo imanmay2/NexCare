@@ -48,17 +48,17 @@ type Menstrual struct{
 
 type HealthSummary struct{
     Id string ` json:"id" binding:"required" `
+    Created_At time.Time `json:"created_at"`
     Blood_Type string ` json:"blood_type" binding:"required" `
     Allergies string ` json:"allergies" binding:"required" `
-    Insaurance string ` json:"insaurance" binding:"required" `
-    Contact Contacts ` json:"contacts" binding:"required" `
+    Insurance string ` json:"insurance" binding:"required" `
+    Contact []Contacts ` json:"contacts" binding:"required" `
     Family_History string ` json:"family_history" `
     Surgical_History string ` json:"surgical_history" `
     Current_Medication string ` json:"current_medications" `
     Medical_Conditions string ` json:"medical_conditions" `
-    Menstrual_History Menstrual ` json:"menstrual_history" `
-    Imp string ` json:"Imp" `
-    Created_At time.Time `json:"created_at"`
+    Menstrual_History []Menstrual ` json:"menstrual_history" `
+    Imp time.Time ` json:"imp" `
 }
 
 type DrugType struct {
@@ -66,6 +66,7 @@ type DrugType struct {
 	Dosage string ` json:"dosage" `
 	Duration string ` json:"duration" `
 	Frequency string ` json:"frequency" `
+    Instruction string ` json:"instruction" `
 }
 
 type Consultation struct{
@@ -77,6 +78,6 @@ type Consultation struct{
 	Diagnosis string ` json:"diagnosis" binding:"required" `
 	Treatment string ` json:"treatment" binding:"required" `
 	Physical_examination string ` json:"physical_examination" binding:"required" `
-	Drug DrugType ` json:"drug" binding:"required" `
+	Drug []DrugType ` json:"drug" binding:"required" `
 	Investigations string ` json:"investigations" `
 }
