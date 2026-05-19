@@ -39,5 +39,5 @@ func DoctorRoutes(router *gin.Engine) {
 	doctorGroup.POST("/uploadProfilePic", controller.UploadProfilePic)
 	doctorGroup.DELETE("/deleteProfilePic", controller.DeleteProfilePic)
 	// doctorGroup.GET("/getAppointments",controller.GetAppointments)
-	// doctorGroup.GET("/getPatientRecords",controller.GetPatientRecords)
+	doctorGroup.GET("/getPatientMedicalRecords",controller.GetPatientMedicalRecords)
 }

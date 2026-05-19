@@ -64,7 +64,7 @@ func PostUser(ctx *gin.Context) {
 	} else if util.VerifyOTP(user.Email, user.Otp) && user.IsLogin {
 		//login
 		//function to fetch the user_id for passing into generate_JWT token.
-		id, name, role := util.GetUserDetails(user.Email)
+		id, name, role, isOnboarded := util.GetUserDetails(user.Email)
 		token, err := util.GenerateJWT(id, user.Email)
 		if err != nil {
 			ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
@@ -80,7 +80,7 @@ func PostUser(ctx *gin.Context) {
 		ctx.Set("userID", id)
 		ctx.Set("email", user.Email)
 
-		ctx.IndentedJSON(200, gin.H{"id": id, "name": name, "role": role})
+		ctx.IndentedJSON(200, gin.H{"id": id, "name": name, "role": role, "isOnboarded": isOnboarded})
 		return
 	} else {
 		ctx.IndentedJSON(401, gin.H{"Message": "Incorrect OTP entered.", "success": false})

@@ -81,3 +81,22 @@ type Consultation struct{
 	Drug []DrugType ` json:"drug" binding:"required" `
 	Investigations string ` json:"investigations" `
 }
+
+type PatientMedicalRecord struct {
+    Created_At time.Time `json:"created_at"`
+    Name string ` json:"name" binding:"required" `
+    Age int64 ` json:"age" binding:"required" `
+    Gen_id string ` json:"gen_id" binding:"required" `
+    Blood_Type string ` json:"blood_type" `
+    Allergies string ` json:"allergies" `
+    Medical_Conditions string ` json:"medical_conditions" `
+    Current_Medications string ` json:"current_medications" `
+    Family_History string ` json:"family_history" `
+    Surgical_History string ` json:"surgical_history" `
+    Bp BloodPressure ` json:"bp" `
+    Temp float64 ` json:"temp" `
+    Heart_Rate int64 ` json:"heart_rate" `
+    Weight float64 ` json:"weight" `
+    Height float64 ` json:"height" `
+    SpO2 int64 ` json:"spo2" `
+}

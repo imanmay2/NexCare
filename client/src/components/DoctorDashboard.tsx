@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -27,7 +28,8 @@ import {
   Ruler,
   PlusCircle,
   Search,
-  Save
+  Save,
+  UserSearch
 } from 'lucide-react';
 import { Input } from './ui/input';
 import { HealthMetricsOverlay } from './HealthMetricsOverlay';
@@ -53,8 +55,8 @@ interface DoctorDashboardProps {
   onLogout: () => void;
   language: 'en' | 'hi' | 'pa';
   isOnline: boolean;
-  data?: any;
-  setData?: any
+  doctorData?: any;
+  setDoctorData?: React.Dispatch<React.SetStateAction<any>>;
 }
 
 interface Consultation {
@@ -72,7 +74,7 @@ interface Consultation {
 type TimeSlot = { id: number, start: string; end: string };
 type TimeSlots = Record<string, TimeSlot[]>;
 
-export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, data, setData }: DoctorDashboardProps) {
+export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, doctorData, setDoctorData }: DoctorDashboardProps) {
   const [consultations] = useState<Consultation[]>([
     {
       id: '1',
@@ -112,6 +114,8 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
   const [isSaving, setIsSaving] = useState(false);
   const [timeSlots, setTimeSlots] = useState<TimeSlots>({
   });
+  const [patientId, setPatientId] = useState<string>("");
+  const [patientMedicalRecord, setPatientMedicalRecord] = useState<any>(null);
 
   useEffect(() => {
     axios.get("http://localhost:8090/doctor/getSchedule", { withCredentials: true })
@@ -262,6 +266,28 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
     }, 2000);
   }
 
+  const searchPatientData = () => {
+    axios.get(`http://localhost:8090/doctor/getPatientMedicalRecords?p_id=${patientId}`, { withCredentials: true })
+      .then((res) => {
+        const data = res.data.data;
+        if (res.status === 200) {
+          console.log("Fetched Patient Data:", data);
+          setPatientMedicalRecord(data);
+          showToast("Patient data fetched successfully!", true);
+        } else {
+          throw Error("Failed to fetch patient data");
+        }
+      }).catch((err) => {
+        showToast("Error in fetching patient data...", false);
+      })
+  }
+
+  const getPatientInitials = (name: string) => {
+    const names = name.split(' ');
+    const initials = names.map(n => n[0]).join('');
+    return initials.toUpperCase();
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -278,7 +304,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                 <h1 className="text-xl font-semibold text-gray-900">
                   {t.welcome} {user.name}
                 </h1>
-                {data?.domain && data?.hospital && <p className="text-sm text-gray-600">{SPECIALIZATIONS.filter((s => s.value == data?.domain))[0].label || ''} • {data?.hospital || ''}</p>}
+                {doctorData?.domain && doctorData?.hospital && <p className="text-sm text-gray-600">{SPECIALIZATIONS.filter((s => s.value == doctorData?.domain))[0].label || ''} • {doctorData?.hospital || ''}</p>}
               </div>
             </div>
 
@@ -434,120 +460,164 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
               <CardContent className="space-y-6 py-6">
 
                 {/* Search Bar */}
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                  <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                <div className="flex-1 w-full">
+                  <div className="relative flex items-center bg-white border border-slate-200 shadow-sm rounded-xl p-1.5 focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent transition-all">
+                    {/* Search Icon */}
+                    <Search className="absolute left-4 text-muted-foreground h-4 w-4 pointer-events-none" />
+
+                    {/* Input Field */}
+                    <input
+                      type="text"
                       placeholder="Search Patient ID..."
-                      className="pl-10 bg-white border-none shadow-sm h-12"
+                      className="w-full pl-10 pr-4 py-2 bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:text-muted-foreground placeholder:font-medium"
+                      onChange={(e) => setPatientId(e.target.value)}
                     />
+
+                    {/* The Flush Action Button */}
+                    <Button
+                      className="h-9 px-6 bg-slate-900 hover:bg-slate-800 text-primary font-bold text-xs rounded-lg shadow-sm shrink-0 transition-all"
+                      onClick={searchPatientData}
+                    >
+                      Search
+                    </Button>
                   </div>
                 </div>
 
                 {/* Patient Summary Card */}
-                <div className="lg:col-span-1">
-                  <Card className="h-full border-blue-100 bg-blue-50/30">
-                    <CardHeader>
-                      <CardTitle className="text-base">Current Patient Info</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                        <Avatar className="h-12 w-12 border-2 border-blue-200">
-                          <AvatarFallback>AS</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-bold">Amar Singh</p>
-                          <p className="text-xs text-gray-500">ID: PX-9921 • 35 Yrs</p>
+                {patientMedicalRecord ? (<>
+                  <div className="lg:col-span-1">
+                    <Card className="h-full border-blue-100 bg-blue-50/30">
+                      <CardHeader>
+                        <CardTitle className="text-base">Current Patient Info</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
+                          <Avatar className="h-12 w-12 border-2 border-blue-200">
+                            <AvatarFallback>{getPatientInitials(patientMedicalRecord.name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-bold">{patientMedicalRecord.name}</p>
+                            <p className="text-xs text-gray-500">ID: {patientId} • {[patientMedicalRecord.age]} Yrs</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Blood Group</span>
-                          <span className="font-medium">B+ Positive</span>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Blood Group</span>
+                            <span className="font-medium">{patientMedicalRecord.blood_type}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Known Allergies</span>
+                            <span className="text-red-600 font-medium">{patientMedicalRecord.allergies}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Chronic Conditions</span>
+                            <span className="font-medium">{patientMedicalRecord.medical_conditions}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Current Medications</span>
+                            <span className="font-medium">{patientMedicalRecord.current_medications}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Family History</span>
+                            <span className="font-medium">{patientMedicalRecord.family_history}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Surgical History</span>
+                            <span className="font-medium">{patientMedicalRecord.surgical_history}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Known Allergies</span>
-                          <span className="text-red-600 font-medium">Penicillin</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Chronic Conditions</span>
-                          <span className="font-medium">Hypertension</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Current Medications</span>
-                          <span className="font-medium">Lisinopril 10mg</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Family History</span>
-                          <span className="font-medium">Cardiac Issues of Father</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Surgical History</span>
-                          <span className="font-medium">Appendectomy</span>
-                        </div>
-                      </div>
-                      <Button onClick={() => setIsClinicalProfileModalOpen(true)} className="w-full mt-4 variant-outline bg-white border-blue-200 text-blue-600 hover:bg-blue-50">
-                        Edit Clinical Profile
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* The Metrics Grid */}
-                <Card className="border-none shadow-sm overflow-hidden">
-                  <CardHeader className="bg-white border-b pb-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <CardTitle className="text-lg font-bold text-gray-900">Clinical Vitals</CardTitle>
-                        <CardDescription>Recent physiological measurements</CardDescription>
-                      </div>
-                      <div className='flex items-center gap-4'>
-                        <Label className="text-sm font-medium text-gray-500">
-                          <b>Date:</b> {new Date().toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </Label>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          Last Sync: Just now
-                        </Badge>
-                        <Button
-                          onClick={() => setIsMetricsModalOpen(true)}
-                          variant="outline"
-                        >
-                          <PlusCircle className="h-5 w-5" />
-                          Add New Metrics
+                        <Button onClick={() => setIsClinicalProfileModalOpen(true)} className="w-full mt-4 variant-outline bg-white border-blue-200 text-blue-600 hover:bg-blue-50">
+                          Edit Clinical Profile
                         </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-y md:divide-y-0">
-                      {[
-                        { label: "Blood Pressure", value: "120/80", unit: "mmHg", icon: HeartPulse, color: "text-red-500" },
-                        { label: "Heart Rate", value: "72", unit: "bpm", icon: Activity, color: "text-orange-500" },
-                        { label: "SpO2", value: "98", unit: "%", icon: CheckCircle, color: "text-blue-500" },
-                        { label: "Temp", value: "98.6", unit: "°F", icon: Thermometer, color: "text-yellow-600" },
-                        { label: "Weight", value: "68", unit: "kg", icon: Scale, color: "text-emerald-600" },
-                        { label: "Height", value: "172", unit: "cm", icon: Ruler, color: "text-indigo-600" }
-                      ].map((metric) => (
-                        <div key={metric.label} className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm transition-hover hover:border-blue-200 mx-2">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className={`p-1.5 rounded-md ${metric.color.replace('text', 'bg')}/10`}>
-                              <metric.icon className={`h-4 w-4 ${metric.color}`} />
-                            </div>
-                            <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400">{metric.label}</p>
-                          </div>
-                          <div className="flex items-end gap-1">
-                            <span className="text-2xl font-black text-gray-900 leading-none">{metric.value}</span>
-                            <span className="text-[10px] text-gray-400 font-medium pb-0.5 leading-none">{metric.unit}</span>
-                          </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card className="border-none shadow-sm overflow-hidden">
+                    <CardHeader className="bg-white border-b pb-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle className="text-lg font-bold text-gray-900">Clinical Vitals</CardTitle>
+                          <CardDescription>Recent physiological measurements</CardDescription>
                         </div>
-                      ))}
+                        <div className='flex items-center gap-4'>
+                          <Label className="text-sm font-medium text-gray-500">
+                            <b>Date:</b> {new Date(patientMedicalRecord.created_at).toLocaleDateString('en-US', {
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </Label>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            Last Sync: Just now
+                          </Badge>
+                          <Button
+                            onClick={() => setIsMetricsModalOpen(true)}
+                            variant="outline"
+                          >
+                            <PlusCircle className="h-5 w-5" />
+                            Add New Metrics
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-y md:divide-y-0">
+                        {[
+                          { label: "Blood Pressure", value: `${patientMedicalRecord.bp.sys}/${patientMedicalRecord.bp.dia}`, unit: "mmHg", icon: HeartPulse, color: "text-red-500" },
+                          { label: "Heart Rate", value: `${patientMedicalRecord.heart_rate}`, unit: "bpm", icon: Activity, color: "text-orange-500" },
+                          { label: "SpO2", value: `${patientMedicalRecord.spo2}`, unit: "%", icon: CheckCircle, color: "text-blue-500" },
+                          { label: "Temp", value: `${patientMedicalRecord.temp}`, unit: "°F", icon: Thermometer, color: "text-yellow-600" },
+                          { label: "Weight", value: `${patientMedicalRecord.weight}`, unit: "kg", icon: Scale, color: "text-emerald-600" },
+                          { label: "Height", value: `${patientMedicalRecord.height}`, unit: "cm", icon: Ruler, color: "text-indigo-600" }
+                        ].map((metric) => (
+                          <div key={metric.label} className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm transition-hover hover:border-blue-200 mx-2">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className={`p-1.5 rounded-md ${metric.color.replace('text', 'bg')}/10`}>
+                                <metric.icon className={`h-4 w-4 ${metric.color}`} />
+                              </div>
+                              <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400">{metric.label}</p>
+                            </div>
+                            <div className="flex items-end gap-1">
+                              <span className="text-2xl font-black text-gray-900 leading-none">{metric.value}</span>
+                              <span className="text-[10px] text-gray-400 font-medium pb-0.5 leading-none">{metric.unit}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card></>) :
+                  <div className="flex flex-col items-center justify-center py-24 px-6 text-center animate-in fade-in zoom-in-95 duration-500">
+
+                    {/* Premium Lottie Player Container */}
+                    <div className="w-72 h-72 mb-2 flex items-center justify-center relative">
+                      {/* Subtle high-end background glow beneath the animation */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/5 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+                      <DotLottieReact
+                        src="/assets/lottie/not_found.json"
+                        loop
+                        autoplay
+                        className="w-full h-full object-contain mix-blend-multiply"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
+
+                    {/* Typography Overhaul */}
+                    <div className="max-w-sm space-y-2">
+                      <div className="flex items-center justify-center gap-2 text-slate-900">
+                        <UserSearch className="h-5 w-5 text-blue-600 shrink-0" />
+                        <h3 className="text-2xl font-black uppercase tracking-tight">
+                          No Patient Selected
+                        </h3>
+                      </div>
+
+                      <p className="text-sm font-medium text-slate-500 leading-relaxed italic">
+                        Please utilize the search matrix above to retrieve and initialize a active patient file.
+                      </p>
+                    </div>
+
+                  </div>
+                }
 
                 {/* Add the Overlay Component here */}
                 <HealthMetricsOverlay
@@ -602,7 +672,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
 
           <TabsContent value="settings">
             <Card>
-              <DoctorSettings user={user} setUser={setUser} data={data} setData={setData} />
+              <DoctorSettings user={user} setUser={setUser} data={doctorData} setData={setDoctorData} />
             </Card>
           </TabsContent>
         </Tabs>

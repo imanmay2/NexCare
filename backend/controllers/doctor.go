@@ -126,8 +126,18 @@ func GetAppointments() {
 
 }
 
-func GetPatientRecords() {
+func GetPatientMedicalRecords(ctx *gin.Context) {
+	patientId := ctx.Query("p_id")
 	// Get the medical records of the selected patient
+	query := "select u.name, u.age, u.gen_id, m.blood_type, m.allergies, m.medical_conditions, m.current_medications, m.family_history, m.surgical_history, v.bp, v.temp, v.weight, v.height, v.heart_rate, v.spo2, v.created_at from health_summary m inner join users u on m.p_id = u.id inner join health_metrics v on v.p_id = u.id where u.gen_id=$1 order by v.created_at desc limit 1" // need to select the latest health metrics of the patient based on the created_at field in health_metrics table
+	row := conn.DB.QueryRow(context.Background(), query, patientId)
+	var medicalRecord model.PatientMedicalRecord
+	err := row.Scan(&medicalRecord.Name, &medicalRecord.Age, &medicalRecord.Gen_id, &medicalRecord.Blood_Type, &medicalRecord.Allergies, &medicalRecord.Medical_Conditions, &medicalRecord.Current_Medications, &medicalRecord.Family_History, &medicalRecord.Surgical_History, &medicalRecord.Bp, &medicalRecord.Temp, &medicalRecord.Weight, &medicalRecord.Height, &medicalRecord.Heart_Rate, &medicalRecord.SpO2, &medicalRecord.Created_At)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	ctx.IndentedJSON(200, gin.H{"data": medicalRecord, "Message": "Patient Medical Record Retrieved Successfully", "success": true})
 
 }
 
