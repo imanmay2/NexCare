@@ -85,7 +85,9 @@ type Consultation struct{
 
 type TestValues  struct{
     Value float64 ` json:"value" binding:"required" `
-    Unit string ` json:"unit" binding:"required" `
+    Minvalue float64 ` json:"min_value" `
+    Maxvalue float64 ` json:"max_value" `
+    Unit string ` json:"unit" `
 }
 
 

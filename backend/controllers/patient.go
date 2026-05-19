@@ -167,7 +167,7 @@ func GetConsultationData(ctx *gin.Context) {
 // / fetch the lab result for the particular patient.
 func GetLabResults(ctx *gin.Context) {
 	userID := ctx.GetString("userID") // patient_id
-	query := ` select lr.id,lr.p_id,lr.d_id,lr.test_group,lr.created_at,jsonb_object_agg(tv.key,jsonb_build_object('value',tv.value,'unit',tv.unit)) as results from lab_result lr join test_values tv on tv.id=ANY(lr.test_id) where p_id=$1 group by lr.id `
+	query := ` select lr.id,lr.p_id,lr.d_id,lr.test_group,lr.created_at,jsonb_object_agg(tv.key,jsonb_build_object('value',tv.value,'min',rr.min_value,'max',rr.max_value,'unit',rr.unit)) as results from lab_result lr join test_values tv on tv.id=ANY(lr.test_id) join min_max rr on LOWER(TRIM(tv.key))=LOWER(TRIM(rr.test_name)) where p_id=$1 group by lr.id `
 	row,err:=conn.DB.Query(context.Background(),query,userID)
 	if(err!=nil){
 		fmt.Println("Error in fetching lab result : ",err.Error())
