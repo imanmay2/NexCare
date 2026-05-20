@@ -1,31 +1,32 @@
 package routes
 
 import (
-    controller "nexcare/backend/controllers"
-    "nexcare/backend/middleware"
-    "github.com/gin-gonic/gin"
+	controller "nexcare/backend/controllers"
+	"nexcare/backend/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterUserRoutes(router *gin.Engine) {
-    userGroup := router.Group("/users")
-    userGroup.POST("/", controller.PostUser)
-    userGroup.GET("/me", controller.Me)
-    userGroup.POST("/otp", controller.Generate_StoreOTP)
-    userGroup.POST("/logout", controller.LogoutUser)
+	userGroup := router.Group("/users")
+	userGroup.POST("/", controller.PostUser)
+	userGroup.GET("/me", controller.Me)
+	userGroup.POST("/otp", controller.Generate_StoreOTP)
+	userGroup.POST("/logout", controller.LogoutUser)
 }
 
 func PatientRoutes(router *gin.Engine) {
-    patientGroup := router.Group("/patient")
-    patientGroup.Use(middleware.JWTAuthMiddleware())
-    patientGroup.GET("/", controller.GetPatientInfo)
-    patientGroup.GET("/availableDoctor", controller.GetDoctorInfo)
-    patientGroup.GET("/getAppointment", controller.GetAppointment) 
-    // patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
-    patientGroup.POST("/bookAppointment", controller.PostAppointment)
-    patientGroup.GET("/healthmetrics",controller.GetHealthMetrics)
-    patientGroup.GET("/healthsummary",controller.GetHealthSummary) 
-    patientGroup.GET("/consultationdata",controller.GetConsultationData) 
-    patientGroup.GET("/labResults",controller.GetLabResults) // in progress
+	patientGroup := router.Group("/patient")
+	patientGroup.Use(middleware.JWTAuthMiddleware())
+	patientGroup.GET("/", controller.GetPatientInfo)
+	patientGroup.GET("/availableDoctor", controller.GetDoctorInfo)
+	patientGroup.GET("/getAppointment", controller.GetAppointment)
+	// patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
+	patientGroup.POST("/bookAppointment", controller.PostAppointment)
+	patientGroup.GET("/healthmetrics", controller.GetHealthMetrics)
+	patientGroup.GET("/healthsummary", controller.GetHealthSummary)
+	patientGroup.GET("/consultationdata", controller.GetConsultationData)
+	patientGroup.GET("/labResults", controller.GetLabResults) // in progress
 }
 
 func DoctorRoutes(router *gin.Engine) {
@@ -39,5 +40,8 @@ func DoctorRoutes(router *gin.Engine) {
 	doctorGroup.POST("/uploadProfilePic", controller.UploadProfilePic)
 	doctorGroup.DELETE("/deleteProfilePic", controller.DeleteProfilePic)
 	// doctorGroup.GET("/getAppointments",controller.GetAppointments)
-	doctorGroup.GET("/getPatientMedicalRecords",controller.GetPatientMedicalRecords)
+	doctorGroup.GET("/getPatientMedicalRecords", controller.GetPatientMedicalRecords)
+	doctorGroup.POST("/addPatientMedicalRecords", controller.AddPatientMedicalRecords)
+	doctorGroup.PUT("/updatePatientMedicalRecords", controller.UpdatePatientMedicalRecords)
+    doctorGroup.POST("/addVitals", controller.AddPatientVitals)
 }

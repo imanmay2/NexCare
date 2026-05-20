@@ -29,7 +29,8 @@ import {
   PlusCircle,
   Search,
   Save,
-  UserSearch
+  UserSearch,
+  Plus
 } from 'lucide-react';
 import { Input } from './ui/input';
 import { HealthMetricsOverlay } from './HealthMetricsOverlay';
@@ -117,6 +118,13 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
   const [patientId, setPatientId] = useState<string>("");
   const [patientMedicalRecord, setPatientMedicalRecord] = useState<any>(null);
 
+  const [newPatientRecord, setNewPatientRecord] = useState<any>(null);
+
+  const [noMedicalRecord, setNoMedicalRecord] = useState(false);
+  const [vitalsAdded, setVitalsAdded] = useState(false);
+
+  const [isNew, setIsNew] = useState(false);
+
   useEffect(() => {
     axios.get("http://localhost:8090/doctor/getSchedule", { withCredentials: true })
       .then((res) => {
@@ -130,6 +138,14 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
         showToast("Error in fetching schedule...", false);
       })
   }, [])
+
+  useEffect(() => {
+    try {
+      setVitalsAdded(patientMedicalRecord.bp?.sys);
+    } catch (err) {
+      setVitalsAdded(false);
+    }
+  }, [patientMedicalRecord])
 
   const translations = {
     en: {
@@ -268,12 +284,22 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
 
   const searchPatientData = () => {
     axios.get(`http://localhost:8090/doctor/getPatientMedicalRecords?p_id=${patientId}`, { withCredentials: true })
-      .then((res) => {
+      .then(async (res) => {
         const data = res.data.data;
         if (res.status === 200) {
-          console.log("Fetched Patient Data:", data);
           setPatientMedicalRecord(data);
+          // check if vitals present
+
           showToast("Patient data fetched successfully!", true);
+        } else if (res.status === 204) {
+          let patientFound = await getPatientBasicInfo();
+          if (patientFound) {
+            showToast("No medical record found for the patient", false);
+            setNoMedicalRecord(true);
+          } else {
+            showToast("Patient not found...", false);
+            setNoMedicalRecord(false);
+          }
         } else {
           throw Error("Failed to fetch patient data");
         }
@@ -286,6 +312,23 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
     const names = name.split(' ');
     const initials = names.map(n => n[0]).join('');
     return initials.toUpperCase();
+  }
+
+  const getPatientBasicInfo = async () => {
+    let patientFound = false;
+    try {
+      const res = await axios.get(`http://localhost:8090/patient/?gen_id=${patientId}`, { withCredentials: true })
+      const data = res.data.data;
+      if (res.status === 200) {
+        setNewPatientRecord({ ...newPatientRecord, gender: data.gender, age: data.age, name: data.name });
+        patientFound = true;
+      } else {
+        throw Error("Failed to fetch patient data");
+      }
+    } catch (err) {
+      patientFound = false;
+    }
+    return patientFound
   }
 
   return (
@@ -470,7 +513,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                       type="text"
                       placeholder="Search Patient ID..."
                       className="w-full pl-10 pr-4 py-2 bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:text-muted-foreground placeholder:font-medium"
-                      onChange={(e) => setPatientId(e.target.value)}
+                      onChange={(e) => { setPatientId(e.target.value); setNoMedicalRecord(false); }}
                     />
 
                     {/* The Flush Action Button */}
@@ -497,7 +540,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                           </Avatar>
                           <div>
                             <p className="font-bold">{patientMedicalRecord.name}</p>
-                            <p className="text-xs text-gray-500">ID: {patientId} • {[patientMedicalRecord.age]} Yrs</p>
+                            <p className="text-xs text-gray-500">ID: {patientId} • {[patientMedicalRecord.age]} Yrs • {patientMedicalRecord.gender}</p>
                           </div>
                         </div>
                         <div className="space-y-2 text-sm">
@@ -533,7 +576,20 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                     </Card>
                   </div>
 
-                  <Card className="border-none shadow-sm overflow-hidden">
+                  {!vitalsAdded && (
+                    <div className="flex flex-col items-center justify-center py-24 px-6 text-center animate-in fade-in zoom-in-95 duration-500">
+                      <Button
+                        onClick={() => {
+                          // Handle add medical record logic
+                          setIsMetricsModalOpen(true);
+                        }}
+                        className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Patient's Vitals
+                      </Button></div>)}
+
+                  {vitalsAdded && (<Card className="border-none shadow-sm overflow-hidden">
                     <CardHeader className="bg-white border-b pb-4">
                       <div className="flex justify-between items-center">
                         <div>
@@ -564,12 +620,14 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-y md:divide-y-0">
                         {[
-                          { label: "Blood Pressure", value: `${patientMedicalRecord.bp.sys}/${patientMedicalRecord.bp.dia}`, unit: "mmHg", icon: HeartPulse, color: "text-red-500" },
-                          { label: "Heart Rate", value: `${patientMedicalRecord.heart_rate}`, unit: "bpm", icon: Activity, color: "text-orange-500" },
-                          { label: "SpO2", value: `${patientMedicalRecord.spo2}`, unit: "%", icon: CheckCircle, color: "text-blue-500" },
-                          { label: "Temp", value: `${patientMedicalRecord.temp}`, unit: "°F", icon: Thermometer, color: "text-yellow-600" },
-                          { label: "Weight", value: `${patientMedicalRecord.weight}`, unit: "kg", icon: Scale, color: "text-emerald-600" },
-                          { label: "Height", value: `${patientMedicalRecord.height}`, unit: "cm", icon: Ruler, color: "text-indigo-600" }
+                          {
+                            label: "Blood Pressure", value: `${patientMedicalRecord.bp?.sys || "NULL"}/${patientMedicalRecord.bp?.dia || "NULL"}`, unit: "mmHg", icon: HeartPulse, color: "text - red - 500"
+                          },
+                          { label: "Heart Rate", value: `${patientMedicalRecord.heart_rate || "NULL"}`, unit: "bpm", icon: Activity, color: "text-orange-500" },
+                          { label: "SpO2", value: `${patientMedicalRecord.spo2 || "NULL"}`, unit: "%", icon: CheckCircle, color: "text-blue-500" },
+                          { label: "Temp", value: `${patientMedicalRecord.temp || "NULL"}`, unit: "°F", icon: Thermometer, color: "text-yellow-600" },
+                          { label: "Weight", value: `${patientMedicalRecord.weight || "NULL"}`, unit: "kg", icon: Scale, color: "text-emerald-600" },
+                          { label: "Height", value: `${patientMedicalRecord.height || "NULL"}`, unit: "cm", icon: Ruler, color: "text-indigo-600" }
                         ].map((metric) => (
                           <div key={metric.label} className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm transition-hover hover:border-blue-200 mx-2">
                             <div className="flex items-center gap-2 mb-3">
@@ -586,7 +644,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                         ))}
                       </div>
                     </CardContent>
-                  </Card></>) :
+                  </Card>)}</>) :
                   <div className="flex flex-col items-center justify-center py-24 px-6 text-center animate-in fade-in zoom-in-95 duration-500">
 
                     {/* Premium Lottie Player Container */}
@@ -607,15 +665,27 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                       <div className="flex items-center justify-center gap-2 text-slate-900">
                         <UserSearch className="h-5 w-5 text-blue-600 shrink-0" />
                         <h3 className="text-2xl font-black uppercase tracking-tight">
-                          No Patient Selected
+                          {!noMedicalRecord ? "No Patient Selected" : "No Data Found"}
                         </h3>
                       </div>
 
                       <p className="text-sm font-medium text-slate-500 leading-relaxed italic">
-                        Please utilize the search matrix above to retrieve and initialize a active patient file.
+                        {!noMedicalRecord ? "Please utilize the search matrix above to retrieve and initialize a active patient file." : "Please add the medical record and the patient vitals to see the data."}
                       </p>
                     </div>
 
+                    {/* Button for adding medical record */}
+                    {noMedicalRecord && (<Button
+                      onClick={() => {
+                        // Handle add medical record logic
+                        setIsClinicalProfileModalOpen(true);
+                        setIsNew(true);
+                      }}
+                      className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Medical Record
+                    </Button>)}
                   </div>
                 }
 
@@ -623,12 +693,23 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                 <HealthMetricsOverlay
                   isOpen={isMetricsModalOpen}
                   onClose={() => setIsMetricsModalOpen(false)}
-                  patientId="PX-9921"
+                  patientId={patientId}
+                  oldHealthRecord={patientMedicalRecord || newPatientRecord}
+                  onUpdate={(updatedVitals) => {
+                    setPatientMedicalRecord((prev: any) => ({ ...prev, ...updatedVitals }));
+                    setVitalsAdded(true);
+                  }}
                 />
                 <EditClinicalProfile
                   isOpen={isClinicalProfileModalOpen}
                   onClose={() => setIsClinicalProfileModalOpen(false)}
-                  patientId="PX-9921"
+                  patientId={patientId}
+                  oldHealthRecord={patientMedicalRecord || newPatientRecord}
+                  isNew={isNew}
+                  onUpdate={(updatedData) => {
+                    setPatientMedicalRecord((prev: any) => ({ ...prev, ...updatedData, }));
+                    setIsNew(false);
+                  }}
                 />
 
               </CardContent>

@@ -4,14 +4,29 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	conn "nexcare/backend/config"
+	model "nexcare/backend/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	conn "nexcare/backend/config"
-	"nexcare/backend/models"
-	"net/http"
 )
 
 func GetPatientInfo(ctx *gin.Context) {
+	gen_id := ctx.Query("gen_id")
+	if gen_id != "" {
+		query := ` select name, gender, age from users where gen_id=$1 `
+		row := conn.DB.QueryRow(context.Background(), query, gen_id)
+		var name, gender string
+		var age int64
+		err := row.Scan(&name, &gender, &age)
+		if err != nil {
+			ctx.IndentedJSON(500, gin.H{"Message": "Error fetching patient info", "success": false})
+			return
+		}
+		ctx.IndentedJSON(200, gin.H{"Message": "Welcome Mr. " + name, "success": true, "data": gin.H{"name": name, "gender": gender, "age": age}})
+		return
+	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Welcome Mr. ", "success": true})
 }
 
@@ -46,7 +61,7 @@ func GetAppointment(ctx *gin.Context) {
 	for rows.Next() {
 		//upcoming.
 		var appointment model.Appointment
-		rows.Scan(&appointment.Id, &appointment.D_id,  &appointment.Date,&appointment.DoctorName,&appointment.Status, &appointment.Symptom, &appointment.Time, &appointment.Type)
+		rows.Scan(&appointment.Id, &appointment.D_id, &appointment.Date, &appointment.DoctorName, &appointment.Status, &appointment.Symptom, &appointment.Time, &appointment.Type)
 		appointmentData = append(appointmentData, appointment)
 	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Data fetched successfully", "success": true, "data": appointmentData})
@@ -117,14 +132,14 @@ func GetHealthSummary(ctx *gin.Context) {
 			err := json.Unmarshal(contactData, &summ.Contact)
 			if err != nil {
 				fmt.Println("Error occured at Contact unmarshal : ", err.Error())
-				return;
+				return
 			}
 		}
 		if menstrualData != nil {
 			err := json.Unmarshal(menstrualData, &summ.Menstrual_History)
 			if err != nil {
 				fmt.Println("Error occured in menstrual unmarshal : ", err.Error())
-				return;
+				return
 			}
 		}
 		summary = append(summary, summ)
@@ -162,7 +177,7 @@ func GetConsultationData(ctx *gin.Context) {
 	ctx.IndentedJSON(200, gin.H{"Message": "Data Found", "data": consultData, "success": true})
 }
 
-func GetLabResults(ctx *gin.Context){
-	ctx.IndentedJSON(http.StatusAccepted,gin.H{"Data":"Welcome to the Lab Results section."})
+func GetLabResults(ctx *gin.Context) {
+	ctx.IndentedJSON(http.StatusAccepted, gin.H{"Data": "Welcome to the Lab Results section."})
 	// return;
 }
