@@ -16,7 +16,7 @@ func RegisterUserRoutes(router *gin.Engine) {
 
 func PatientRoutes(router *gin.Engine) {
     patientGroup := router.Group("/patient")
-    patientGroup.Use(middleware.JWTAuthMiddleware())
+    // patientGroup.Use(middleware.JWTAuthMiddleware())
     patientGroup.GET("/", controller.GetPatientInfo)
     patientGroup.GET("/availableDoctor", controller.GetDoctorInfo)
     patientGroup.GET("/getAppointment", controller.GetAppointment) 
@@ -25,7 +25,8 @@ func PatientRoutes(router *gin.Engine) {
     patientGroup.GET("/healthmetrics",controller.GetHealthMetrics)
     patientGroup.GET("/healthsummary",controller.GetHealthSummary) 
     patientGroup.GET("/consultationdata",controller.GetConsultationData) 
-    patientGroup.GET("/labResults",controller.GetLabResults) // in progress
+    patientGroup.GET("/labResults",controller.GetLabResults) 
+    patientGroup.POST("/symptomChecker",controller.SymptomChecker)
 }
 
 func DoctorRoutes(router *gin.Engine) {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	ai "nexcare/backend/AI"
 )
 
 func GetPatientInfo(ctx *gin.Context) {
@@ -55,7 +56,7 @@ func GetAppointment(ctx *gin.Context) {
 }
 
 func PostAppointment(ctx *gin.Context) {
-	fmt.Println("check ck 0")
+	// fmt.Println("check ck 0")
 	//post request for feeding the appointment details into the database
 	var appointmentDetails model.Appointment
 	err := ctx.ShouldBindJSON(&appointmentDetails)
@@ -193,4 +194,27 @@ func GetLabResults(ctx *gin.Context) {
 		results=append(results,data)
 	}
 	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Lab Result fetched successfully","data": results, "success": true})	
+}
+
+
+// Controller for the AI Symptom Checker..
+func SymptomChecker(ctx *gin.Context) {
+	var userInput string
+	err := ctx.ShouldBindJSON(&userInput)
+	if err != nil {
+		fmt.Println("Error in binding the user input : ", err.Error())
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": "Invalid input", "success": false})
+		return
+	}
+
+	//call the function to analyze the symptoms and get the result.
+	fmt.Println("User input : ",userInput)
+	result,flag := ai.AnalyzeSymptom(userInput)
+	if !flag{
+		fmt.Println("Error in analyzing the symptoms")
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in analyzing the symptoms", "success": false})
+		return
+	}
+	ctx.IndentedJSON(http.StatusOK,gin.H{"Message":"Data fetched successfully","data":result,"success":true})
+
 }

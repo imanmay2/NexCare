@@ -99,3 +99,13 @@ type LabResult struct{
     Results map[string]TestValues ` json:"results"  binding:"required" `
     Created_At time.Time ` json:"created_at" `
 }
+
+
+type SymptomResult struct{
+    Assessment string ` json:"assessment" `
+    Urgency string ` json:"urgency" `
+    Recommendation string ` json:"recommendation" `
+    Confidence float64 ` json:"confidence" `
+    Next_steps string ` json:"next_steps" `
+    Should_Consult bool ` json:"should_consult" `
+}
