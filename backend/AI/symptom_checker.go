@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func AnalyzeSymptom(userInput string) (string, bool) {
@@ -47,7 +48,7 @@ func AnalyzeSymptom(userInput string) (string, bool) {
 	// print response
 	respText := string(body)
 	fmt.Println("Response from Gemini API:", respText)
-	
+
 	text := strings.ReplaceAll(respText, "```", "")
 	text1 := strings.ReplaceAll(text, "```json", "")
 	text2 := strings.ReplaceAll(text1, "\n", "")
