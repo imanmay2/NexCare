@@ -44,6 +44,7 @@ type Menstrual struct{
     Duration string ` json:"duration" `
     Menarche string ` json:"menarche" `
     Regularity string ` json:"regularity" `
+    Cycle_Length string ` json:"cycle_length" `
     Associated_Symptoms string ` json:"associated_symptoms" `
 }
 
@@ -58,8 +59,8 @@ type HealthSummary struct{
     Surgical_History string ` json:"surgical_history" `
     Current_Medication string ` json:"current_medications" `
     Medical_Conditions string ` json:"medical_conditions" `
-    Menstrual_History []Menstrual ` json:"menstrual_history" `
-    Imp time.Time ` json:"imp" `
+    Menstrual_History Menstrual ` json:"menstrual_history" `
+    Lmp time.Time ` json:"lmp" `
 }
 
 type DrugType struct {

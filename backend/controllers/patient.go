@@ -103,7 +103,7 @@ func GetHealthMetrics(ctx *gin.Context) {
 func GetHealthSummary(ctx *gin.Context) {
 	fmt.Println("Welcome to Health Summary")
 	userID := ctx.GetString("userID")
-	q1 := ` select id,created_at,blood_type,allergies,insurance,contacts,family_history,surgical_history,current_medications,medical_conditions,menstrual_history,imp from health_summary where p_id=$1 `
+	q1 := ` select id,created_at,blood_type,allergies,insurance,contacts,family_history,surgical_history,current_medications,medical_conditions,menstrual_history,lmp from health_summary where p_id=$1 `
 	rows, err := conn.DB.Query(context.Background(), q1, userID)
 	if err != nil {
 		fmt.Println("Error Encountered ")
@@ -115,7 +115,7 @@ func GetHealthSummary(ctx *gin.Context) {
 		var contactData []byte
 		var menstrualData []byte
 		var summ model.HealthSummary
-		rows.Scan(&summ.Id, &summ.Created_At, &summ.Blood_Type, &summ.Allergies, &summ.Insurance, &contactData, &summ.Family_History, &summ.Surgical_History, &summ.Current_Medication, &summ.Medical_Conditions, &menstrualData, &summ.Imp)
+		rows.Scan(&summ.Id, &summ.Created_At, &summ.Blood_Type, &summ.Allergies, &summ.Insurance, &contactData, &summ.Family_History, &summ.Surgical_History, &summ.Current_Medication, &summ.Medical_Conditions, &menstrualData, &summ.Lmp)
 		if contactData != nil {
 			err := json.Unmarshal(contactData, &summ.Contact)
 			if err != nil {

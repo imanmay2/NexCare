@@ -75,6 +75,18 @@ interface VitalSigns {
   spo2?: string;
 }
 
+interface MedicalSummary {
+    bloodType: string;
+    allergies: string[];
+    currentMedications: string[];
+    medicalConditions: string[];
+    emergencyContacts: {
+        name: string;
+        phone: string;
+    }[];
+    insurance: string;
+}
+
 export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) {
   const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'pending' | 'syncing'>('synced');
@@ -272,17 +284,28 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
     fetchData();
   }, []);
 
-  const emergencyInfo = {
-    bloodType: 'O+',
-    allergies: ['Penicillin', 'Shellfish'],
-    currentMedications: ['Vitamin D supplements'],
-    medicalConditions: ['Hypertension (controlled)'],
-    emergencyContacts: [
-      { name: 'Spouse: Simran Kaur', phone: '+91-98765-43211' },
-      { name: 'Brother: Ravi Singh', phone: '+91-98765-43212' }
-    ],
-    insurance: 'ESIC Card: 1234567890'
-  };
+  
+  const [medicalSummary,setMedicalSummary]=useState<MedicalSummary>();
+  //fetch the details for Medcial Summary.
+  useEffect(() => {
+    let fetchMedicalSummary = async () => {
+      let response = await axios.get(`http://localhost:8090/patient/healthsummary`, {
+        withCredentials: true
+      });
+      let data = response.data.data[0];
+      // console.log(data);
+      let summary: MedicalSummary = {
+        bloodType: data.blood_type,
+        allergies: data.allergies.split(","),
+        currentMedications: data.current_medications.split(","),
+        medicalConditions: data.medical_conditions.split(","),
+        emergencyContacts: data.contacts.map((c: any) => ({ name: c.relation +":"+c.name, phone: c.phn_no })),
+        insurance: data.insurance
+      };
+      setMedicalSummary(summary);
+    };
+    fetchMedicalSummary();
+  }, []);
 
   const handleSync = async () => {
     setSyncStatus('syncing');
@@ -376,14 +399,14 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
                   <div>
                     <h4 className="font-medium mb-2">{t.bloodType}</h4>
                     <Badge variant="destructive" className="text-lg px-3 py-1">
-                      {emergencyInfo.bloodType}
+                      {medicalSummary?.bloodType ?? 'N/A'}
                     </Badge>
                   </div>
 
                   <div>
                     <h4 className="font-medium mb-2">{t.allergies}</h4>
                     <div className="space-y-1">
-                      {emergencyInfo.allergies.map((allergy, index) => (
+                      {(medicalSummary?.allergies ?? []).map((allergy, index) => (
                         <Badge key={index} variant="outline" className="mr-2">
                           {allergy}
                         </Badge>
@@ -394,7 +417,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
                   <div>
                     <h4 className="font-medium mb-2">{t.medications}</h4>
                     <div className="space-y-1">
-                      {emergencyInfo.currentMedications.map((med, index) => (
+                      {(medicalSummary?.currentMedications ?? []).map((med, index) => (
                         <p key={index} className="text-sm">{med}</p>
                       ))}
                     </div>
@@ -405,7 +428,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
                   <div>
                     <h4 className="font-medium mb-2">{t.conditions}</h4>
                     <div className="space-y-1">
-                      {emergencyInfo.medicalConditions.map((condition, index) => (
+                      {(medicalSummary?.medicalConditions ?? []).map((condition, index) => (
                         <p key={index} className="text-sm">{condition}</p>
                       ))}
                     </div>
@@ -414,7 +437,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
                   <div>
                     <h4 className="font-medium mb-2">{t.contacts}</h4>
                     <div className="space-y-1">
-                      {emergencyInfo.emergencyContacts.map((contact, index) => (
+                      {(medicalSummary?.emergencyContacts ?? []).map((contact, index) => (
                         <div key={index} className="text-sm">
                           <p className="font-medium">{contact.name}</p>
                           <p className="text-gray-600">{contact.phone}</p>
@@ -425,7 +448,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
 
                   <div>
                     <h4 className="font-medium mb-2">{t.insurance}</h4>
-                    <p className="text-sm">{emergencyInfo.insurance}</p>
+                    <p className="text-sm">{medicalSummary?.insurance ?? 'N/A'}</p>
                   </div>
                 </div>
               </div>
