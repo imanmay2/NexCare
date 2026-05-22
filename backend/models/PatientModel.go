@@ -29,6 +29,7 @@ type Health_Metrics struct{
     Weight float64 ` json:"weight"  binding:"required" `
     Height float64 ` json:"height"  binding:"required" `
     Created_At time.Time ` json:"created_at" `
+    Spo2 int64 ` json:"spo2"  binding:"required" `
 }
 
 type Contacts struct{

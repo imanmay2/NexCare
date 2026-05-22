@@ -218,3 +218,25 @@ func SymptomChecker(ctx *gin.Context) {
 	ctx.IndentedJSON(http.StatusOK,gin.H{"Message":"Data fetched successfully","data":result,"success":true})
 
 }
+
+//Controller for fetching the latest health metrics of the patient.
+func GetLatestHealthMetrics(ctx *gin.Context){
+	userID := ctx.GetString("userID")
+	query := ` select id,bp,temp,heart_rate,weight,height,spo2,created_at from health_metrics where p_id=$1 order by created_at desc limit 1 `
+	row,err:=conn.DB.Query(context.Background(),query,userID)
+	if err!=nil{
+		fmt.Println("Error in fetching latest health metrics : ",err.Error())
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in fetching latest health metrics", "success": false})
+		return
+	}
+	var latestMetrics model.Health_Metrics
+	for row.Next(){
+		err:=row.Scan(&latestMetrics.Id,&latestMetrics.Bp,&latestMetrics.Temp,&latestMetrics.Heart_Rate,&latestMetrics.Weight,&latestMetrics.Height,&latestMetrics.Spo2,&latestMetrics.Created_At)
+		if err!=nil{
+			fmt.Println("Error in scanning latest health metrics : ",err.Error())
+			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in fetching latest health metrics", "success": false})
+			return
+		}
+	}
+	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Latest Health Metrics fetched successfully", "success": true, "data": latestMetrics})
+}

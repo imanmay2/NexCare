@@ -69,13 +69,13 @@ interface HealthMetric {
 export function PatientDashboard({ user, onLogout, language, isOnline }: PatientDashboardProps) {
   //Fetch the gen_id  and print the user's gen_id.
   useEffect(() => {
-    let fetchUSerDetails=async()=>{
-      let response=await axios.get("http://localhost:8090/me",{
-        withCredentials:true
+    let fetchUSerDetails = async () => {
+      let response = await axios.get("http://localhost:8090/me", {
+        withCredentials: true
       });
       console.log(response.data.data);
-      if(response.data.data!=null){
-        user.gen_id=response.data.data.gen_id;
+      if (response.data.data != null) {
+        user.gen_id = response.data.data.gen_id;
       }
     }
     fetchUSerDetails();
@@ -83,27 +83,42 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
 
   //use the useEffect for the fetching the data from the backend and set the state for the appointments.
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  useEffect(()=>{
-    let fetchappointmentData=async()=>{
-      let response=await axios.get("http://localhost:8090/patient/getAppointment",{
-        withCredentials:true
+  useEffect(() => {
+    let fetchappointmentData = async () => {
+      let response = await axios.get("http://localhost:8090/patient/getAppointment", {
+        withCredentials: true
       });
       console.log(response.data.data);
-      let res_=response.data.data;
-      
-      if(response.data.data!=null){
+      let res_ = response.data.data;
+
+      if (response.data.data != null) {
         setAppointments(response.data.data);
       }
     }
     fetchappointmentData();
-  },[])
-
-  const [healthMetrics] = useState<HealthMetric[]>([
-    { type: 'Blood Pressure', value: '120/80', date: '2024-12-15', status: 'normal' },
-    { type: 'Temperature', value: '99.2°F', date: '2024-12-17', status: 'attention' },
-    { type: 'Heart Rate', value: '78 bpm', date: '2024-12-17', status: 'normal' }
-  ]);
-
+  }, [])
+  const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>([]);
+  useEffect(() => {
+    const fetchLatestHealthMetrics = async () => {
+      try {
+        const response = await axios.get("http://localhost:8090/patient/getlatesthealthmetrics", {
+          withCredentials: true
+        });
+        if (response.data?.data != null) {
+          let data:any=response.data.data;
+          let metrics:HealthMetric[] = [
+            { type: 'Blood Pressure', value: data.bp.sys+"/"+data.bp.dia, date: data.created_at.split("T")[0], status: 'normal' },
+            { type: 'Temperature', value: data.temp, date: data.created_at.split("T")[0], status: 'attention' },
+            { type: 'Heart Rate', value: data.heart_rate+' bpm', date:data.created_at.split("T")[0], status: 'normal' }
+          ]
+          setHealthMetrics(metrics);
+        }
+      } catch (error) {
+        console.error('Failed to fetch latest health metrics', error);
+      }
+    };
+    fetchLatestHealthMetrics();
+  }, []);
   const [lastSync, setLastSync] = useState<Date>(new Date());
   const [consultationModal, setConsultationModal] = useState<{
     isOpen: boolean;
@@ -230,7 +245,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
                 <h1 className="text-xl font-semibold text-gray-900">{t.welcome}, {user.name}</h1>
                 <p className="text-sm text-gray-600">{user.email}</p>
                 <p className="text-sm text-gray-600">ID : {user.gen_id}</p>
-                
+
               </div>
             </div>
 
