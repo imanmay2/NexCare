@@ -18,8 +18,11 @@ import {
   Shield,
   RefreshCw,
   Eye,
-  Printer
+  Printer,
+  Axis3D
 } from 'lucide-react';
+import axios from 'axios';
+import { useEffect } from 'react';
 
 interface User {
   id: string;
@@ -69,6 +72,7 @@ interface VitalSigns {
   weight: string;
   height: string;
   bmi: string;
+  spo2?: string;
 }
 
 export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) {
@@ -238,28 +242,35 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
     }
   ];
 
-  const vitalSigns: VitalSigns[] = [
-    {
-      id: '1',
-      date: '2024-12-15',
-      bloodPressure: '120/80',
-      heartRate: '78',
-      temperature: '99.2°F',
-      weight: '70 kg',
-      height: '170 cm',
-      bmi: '24.2'
-    },
-    {
-      id: '2',
-      date: '2024-12-10',
-      bloodPressure: '118/78',
-      heartRate: '75',
-      temperature: '98.6°F',
-      weight: '70 kg',
-      height: '170 cm',
-      bmi: '24.2'
-    }
-  ];
+  const [vitalSigns, setVitalSigns] = useState<VitalSigns[]>([]);
+
+  //fetch from health record api and update state.
+  useEffect(() => {
+    // Simulate API call
+    let fetchData = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8090/patient/healthmetrics`, {
+          withCredentials: true
+        });
+        let data = response.data.data;
+        let vitalSignsData: VitalSigns[] = data.map((record: any) => ({
+          id: record.id,
+          date: record.created_at.split("T")[0],
+          bloodPressure: record.bp.sys+"/"+record.bp.dia,
+          heartRate: record.heart_rate,
+          temperature: record.temp+"°F",
+          weight: record.weight+"kg",
+          height: record.height+"m",
+          bmi:( record.weight/(record.height*record.height)).toFixed(4),
+          spo2: record.spo2
+        }));
+        setVitalSigns(vitalSignsData);
+      } catch (error) {
+        console.error('Error fetching health records:', error);
+      }
+    } 
+    fetchData();
+  }, []);
 
   const emergencyInfo = {
     bloodType: 'O+',

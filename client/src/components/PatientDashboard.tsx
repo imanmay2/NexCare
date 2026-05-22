@@ -108,7 +108,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
           let data:any=response.data.data;
           let metrics:HealthMetric[] = [
             { type: 'Blood Pressure', value: data.bp.sys+"/"+data.bp.dia, date: data.created_at.split("T")[0], status: 'normal' },
-            { type: 'Temperature', value: data.temp, date: data.created_at.split("T")[0], status: 'attention' },
+            { type: 'Temperature', value: data.temp+"°F", date: data.created_at.split("T")[0], status: 'attention' },
             { type: 'Heart Rate', value: data.heart_rate+' bpm', date:data.created_at.split("T")[0], status: 'normal' }
           ]
           setHealthMetrics(metrics);
