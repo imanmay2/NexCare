@@ -78,7 +78,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
         user.gen_id=response.data.data.gen_id;
       }
     }
-    console.log("User Gen ID:", user.gen_id);
+    fetchUSerDetails();
   }, []);
 
   //use the useEffect for the fetching the data from the backend and set the state for the appointments.
@@ -229,7 +229,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{t.welcome}, {user.name}</h1>
                 <p className="text-sm text-gray-600">{user.email}</p>
-                <p className="text-sm text-gray-600">id : {user.gen_id}</p>
+                <p className="text-sm text-gray-600">ID : {user.gen_id}</p>
                 
               </div>
             </div>
