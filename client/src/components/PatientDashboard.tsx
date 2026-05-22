@@ -37,6 +37,8 @@ interface User {
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
   email: string;
+  gen_id: "PX-001MC26";
+  profileURL?: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -65,6 +67,19 @@ interface HealthMetric {
 }
 
 export function PatientDashboard({ user, onLogout, language, isOnline }: PatientDashboardProps) {
+  //Fetch the gen_id  and print the user's gen_id.
+  useEffect(() => {
+    let fetchUSerDetails=async()=>{
+      let response=await axios.get("http://localhost:8090/me",{
+        withCredentials:true
+      });
+      console.log(response.data.data);
+      if(response.data.data!=null){
+        user.gen_id=response.data.data.gen_id;
+      }
+    }
+    console.log("User Gen ID:", user.gen_id);
+  }, []);
 
   //use the useEffect for the fetching the data from the backend and set the state for the appointments.
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -214,6 +229,8 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{t.welcome}, {user.name}</h1>
                 <p className="text-sm text-gray-600">{user.email}</p>
+                <p className="text-sm text-gray-600">id : {user.gen_id}</p>
+                
               </div>
             </div>
 

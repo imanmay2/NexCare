@@ -135,12 +135,6 @@ func Generate_StoreOTP(ctx *gin.Context) {
 
 // User Logout
 func LogoutUser(ctx *gin.Context) {
-
-	// token,err:=ctx.Cookie("token");if(err!=nil){
-	// 	ctx.IndentedJSON(404,gin.H{"Message":"Access Token not found in cookie","success":false})
-	// 	return
-	// }
-
 	refreshToken, err := ctx.Cookie("refresh_token")
 	if err != nil {
 		ctx.IndentedJSON(404, gin.H{"Message": "Refresh Token not found in cookie", "success": false})
@@ -170,10 +164,10 @@ func Me(ctx *gin.Context) {
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
-	query := "select id,name,email,role,profile_url from users where id=$1"
+	query := "select id,name,email,role,profile_url,gen_id from users where id=$1"
 	row := conn.DB.QueryRow(context.Background(), query, userID)
 	var user model.User
-	err_ := row.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.ProfileURL)
+	err_ := row.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.ProfileURL,&user.Gen_id)
 	if err_ != nil {
 		fmt.Println(err_)
 		ctx.IndentedJSON(500, gin.H{"Message": err_.Error(), "success": false})
@@ -181,4 +175,3 @@ func Me(ctx *gin.Context) {
 	}
 	ctx.IndentedJSON(200, gin.H{"data": user, "Message": "User Data Retrieved Successfully", "success": true})
 }
-
