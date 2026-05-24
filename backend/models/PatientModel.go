@@ -82,6 +82,8 @@ type Consultation struct{
 	Physical_examination string ` json:"physical_examination" binding:"required" `
 	Drug []DrugType ` json:"drug" binding:"required" `
 	Investigations string ` json:"investigations" `
+    Summary *string ` json:"summary" `
+    Name string ` json:"name" `
 }
 
 
@@ -100,6 +102,8 @@ type LabResult struct{
     Test_group string ` json:"test_group" binding:"required" `
     Results map[string]TestValues ` json:"results"  binding:"required" `
     Created_At time.Time ` json:"created_at" `
+    Name string ` json:"name" `
+    Summary *string ` json:"summary" `
 }
 
 

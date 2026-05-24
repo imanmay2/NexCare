@@ -19,15 +19,16 @@ func PatientRoutes(router *gin.Engine) {
     patientGroup.Use(middleware.JWTAuthMiddleware())
     patientGroup.GET("/", controller.GetPatientInfo)
     patientGroup.GET("/availableDoctor", controller.GetDoctorInfo)
-    patientGroup.GET("/getAppointment", controller.GetAppointment) 
+    patientGroup.GET("/getAppointment", controller.GetAppointment)
     // patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
     patientGroup.POST("/bookAppointment", controller.PostAppointment)
     patientGroup.GET("/getlatesthealthmetrics", controller.GetLatestHealthMetrics)
     patientGroup.GET("/healthmetrics",controller.GetHealthMetrics)
-    patientGroup.GET("/healthsummary",controller.GetHealthSummary) 
-    patientGroup.GET("/consultationdata",controller.GetConsultationData) 
-    patientGroup.GET("/labResults",controller.GetLabResults)
+    patientGroup.GET("/healthsummary",controller.GetHealthSummary)
+    patientGroup.GET("/consultationdata",controller.GetConsultationData) //precription  +  consultation.
+    patientGroup.GET("/labResults",controller.GetLabResults) //Lab results.
     patientGroup.POST("/symptomChecker",controller.SymptomChecker)
+    patientGroup.PATCH("/updatePatientProfile", controller.UpdatePatientData)
 }
 
 func DoctorRoutes(router *gin.Engine) {

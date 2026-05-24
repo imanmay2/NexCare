@@ -164,10 +164,10 @@ func Me(ctx *gin.Context) {
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
-	query := "select id,name,email,role,profile_url,gen_id from users where id=$1"
+	query := "select id,name,email,role,profile_url,gen_id,age,gender,phn_no from users where id=$1"
 	row := conn.DB.QueryRow(context.Background(), query, userID)
 	var user model.User
-	err_ := row.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.ProfileURL,&user.Gen_id)
+	err_ := row.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.ProfileURL,&user.Gen_id,&user.Age,&user.Gender,&user.Phn_no)
 	if err_ != nil {
 		fmt.Println(err_)
 		ctx.IndentedJSON(500, gin.H{"Message": err_.Error(), "success": false})

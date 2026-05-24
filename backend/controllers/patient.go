@@ -138,7 +138,7 @@ func GetHealthSummary(ctx *gin.Context) {
 func GetConsultationData(ctx *gin.Context) {
 	fmt.Println("Welcome to Consultation Data")
 	userID := ctx.GetString("userID")
-	q1 := ` select c.id,c.created_at,c.title,c.symptoms,c.diagnosis,c.treatment,c.physical_examination,c.drug,c.investigations from consultation c inner join appointment a on a.id=c.a_id where a.p_id= $1 `
+	q1 := ` select c.id,c.created_at,c.title,c.symptoms,c.diagnosis,c.treatment,c.physical_examination,c.drug,c.investigations,c.summary,u.name from consultation c inner join appointment a on a.id=c.a_id inner join users u on a.d_id=u.id where a.p_id= $1 `
 	rows, err := conn.DB.Query(context.Background(), q1, userID)
 	if err != nil {
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
@@ -148,7 +148,7 @@ func GetConsultationData(ctx *gin.Context) {
 	var drugData []byte
 	for rows.Next() {
 		var data model.Consultation
-		err := rows.Scan(&data.Id, &data.Created_At, &data.Title, &data.Symptoms, &data.Diagnosis, &data.Treatment, &data.Physical_examination, &drugData, &data.Investigations)
+		err := rows.Scan(&data.Id, &data.Created_At, &data.Title, &data.Symptoms, &data.Diagnosis, &data.Treatment, &data.Physical_examination, &drugData, &data.Investigations, &data.Summary, &data.Name)
 		if err != nil {
 			fmt.Println("Error occured ", err.Error())
 			return
@@ -163,39 +163,38 @@ func GetConsultationData(ctx *gin.Context) {
 		consultData = append(consultData, data)
 	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Data Found", "data": consultData, "success": true})
-} 
+}
 
 // / fetch the lab result for the particular patient.
 func GetLabResults(ctx *gin.Context) {
 	userID := ctx.GetString("userID") // patient_id
-	query := ` select lr.id,lr.p_id,lr.d_id,lr.test_group,lr.created_at,jsonb_object_agg(tv.key,jsonb_build_object('value',tv.value,'min',rr.min_value,'max',rr.max_value,'unit',rr.unit)) as results from lab_result lr join test_values tv on tv.id=ANY(lr.test_id) join min_max rr on LOWER(TRIM(tv.key))=LOWER(TRIM(rr.test_name)) where p_id=$1 group by lr.id `
-	row,err:=conn.DB.Query(context.Background(),query,userID)
-	if(err!=nil){
-		fmt.Println("Error in fetching lab result : ",err.Error())
+	query := ` select lr.id,lr.p_id,lr.d_id,lr.test_group,lr.created_at,lr.summary,u.name,jsonb_object_agg(tv.key,jsonb_build_object('value',tv.value,'min',rr.min_value,'max',rr.max_value,'unit',rr.unit)) as results from lab_result lr join test_values tv on tv.id=ANY(lr.test_id) join min_max rr on LOWER(TRIM(tv.key))=LOWER(TRIM(rr.test_name)) inner join users u on u.id=lr.d_id where p_id=$1 group by lr.id,u.name `
+	row, err := conn.DB.Query(context.Background(), query, userID)
+	if err != nil {
+		fmt.Println("Error in fetching lab result : ", err.Error())
 		ctx.IndentedJSON(500, gin.H{"Message": "Error in fetching lab result", "success": false})
 		return
 	}
-	var results[] model.LabResult
+	var results []model.LabResult
 	var rawjson []byte
-	for row.Next(){
+	for row.Next() {
 		var data model.LabResult
-		err:=row.Scan(&data.Id,&data.P_id,&data.D_id,&data.Test_group,&data.Created_At,&rawjson)
-		if err!=nil{
-			fmt.Printf("Error in scanning lab result : %s",err.Error())
+		err := row.Scan(&data.Id, &data.P_id, &data.D_id, &data.Test_group, &data.Created_At, &data.Summary,&data.Name, &rawjson)
+		if err != nil {
+			fmt.Printf("Error in scanning lab result : %s", err.Error())
 			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in fetching lab result", "success": false})
 			return
 		}
-		err=json.Unmarshal(rawjson,&data.Results)
-		if err!=nil{
-			fmt.Println("Error in unmarshal in lab results ",err.Error())
+		err = json.Unmarshal(rawjson, &data.Results)
+		if err != nil {
+			fmt.Println("Error in unmarshal in lab results ", err.Error())
 			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in unmarshal of lab result", "success": false})
 			return
 		}
-		results=append(results,data)
+		results = append(results, data)
 	}
-	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Lab Result fetched successfully","data": results, "success": true})	
+	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Lab Result fetched successfully", "data": results, "success": true})
 }
-
 
 // Controller for the AI Symptom Checker..
 func SymptomChecker(ctx *gin.Context) {
@@ -208,35 +207,56 @@ func SymptomChecker(ctx *gin.Context) {
 	}
 
 	//call the function to analyze the symptoms and get the result.
-	fmt.Println("User input : ",userInput)
-	result,flag := ai.AnalyzeSymptom(userInput)
-	if !flag{
+	fmt.Println("User input : ", userInput)
+	result, flag := ai.AnalyzeSymptom(userInput)
+	if !flag {
 		fmt.Println("Error in analyzing the symptoms")
 		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in analyzing the symptoms", "success": false})
 		return
 	}
-	ctx.IndentedJSON(http.StatusOK,gin.H{"Message":"Data fetched successfully","data":result,"success":true})
+	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Data fetched successfully", "data": result, "success": true})
 
 }
 
-//Controller for fetching the latest health metrics of the patient.
-func GetLatestHealthMetrics(ctx *gin.Context){
+// Controller for fetching the latest health metrics of the patient.
+func GetLatestHealthMetrics(ctx *gin.Context) {
 	userID := ctx.GetString("userID")
 	query := ` select id,bp,temp,heart_rate,weight,height,spo2,created_at from health_metrics where p_id=$1 order by created_at desc limit 1 `
-	row,err:=conn.DB.Query(context.Background(),query,userID)
-	if err!=nil{
-		fmt.Println("Error in fetching latest health metrics : ",err.Error())
+	row, err := conn.DB.Query(context.Background(), query, userID)
+	if err != nil {
+		fmt.Println("Error in fetching latest health metrics : ", err.Error())
 		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in fetching latest health metrics", "success": false})
 		return
 	}
 	var latestMetrics model.Health_Metrics
-	for row.Next(){
-		err:=row.Scan(&latestMetrics.Id,&latestMetrics.Bp,&latestMetrics.Temp,&latestMetrics.Heart_Rate,&latestMetrics.Weight,&latestMetrics.Height,&latestMetrics.Spo2,&latestMetrics.Created_At)
-		if err!=nil{
-			fmt.Println("Error in scanning latest health metrics : ",err.Error())
+	for row.Next() {
+		err := row.Scan(&latestMetrics.Id, &latestMetrics.Bp, &latestMetrics.Temp, &latestMetrics.Heart_Rate, &latestMetrics.Weight, &latestMetrics.Height, &latestMetrics.Spo2, &latestMetrics.Created_At)
+		if err != nil {
+			fmt.Println("Error in scanning latest health metrics : ", err.Error())
 			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in fetching latest health metrics", "success": false})
 			return
 		}
 	}
 	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Latest Health Metrics fetched successfully", "success": true, "data": latestMetrics})
+}
+
+
+///Patch request for updating the profile data of the patient.
+func UpdatePatientData(ctx *gin.Context) {
+	userID := ctx.GetString("userID")
+	var profileData model.UpdatePatientData
+	err := ctx.ShouldBindJSON(&profileData)
+	if err != nil {
+		fmt.Println("Error in binding the profile data : ", err.Error())
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": "Invalid input", "success": false})
+		return
+	}
+	query := ` update users set age=$1, gender=$2, phn_no=$3 where id=$4 `
+	_, err = conn.DB.Exec(context.Background(), query, profileData.Age, profileData.Gender, profileData.Phn_no, userID)
+	if err != nil {
+		fmt.Println("Error in updating the profile data : ", err.Error())
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in updating the profile data", "success": false})
+		return
+	}
+	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Profile data updated successfully", "success": true})
 }

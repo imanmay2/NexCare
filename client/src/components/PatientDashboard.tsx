@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
+import PatientProfileSetup from './PatientProfileSetup';
 import {
   Calendar,
   Video,
@@ -31,7 +32,6 @@ import { HealthRecords } from './HealthRecords';
 import { PharmacyLocator } from './PharmacyLocator';
 import { ConsultationModal } from './ConsultationModal';
 import axios from 'axios';
-
 interface User {
   id: string;
   name: string;
@@ -40,6 +40,9 @@ interface User {
   gen_id: "PX-001MC26";
   profileURL?: string;
   language: 'en' | 'hi' | 'pa';
+  age?: number;
+  gender?:string;
+  phn_no?: string;
 }
 
 interface PatientDashboardProps {
@@ -67,15 +70,23 @@ interface HealthMetric {
 }
 
 export function PatientDashboard({ user, onLogout, language, isOnline }: PatientDashboardProps) {
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   //Fetch the gen_id  and print the user's gen_id.
   useEffect(() => {
     let fetchUSerDetails = async () => {
-      let response = await axios.get("http://localhost:8090/me", {
+      let response = await axios.get("http://localhost:8090/users/me", {
         withCredentials: true
       });
-      console.log(response.data.data);
-      if (response.data.data != null) {
-        user.gen_id = response.data.data.gen_id;
+      let userData=response.data.data;
+      if (userData != null) {
+        user.gen_id = userData.gen_id;
+      }
+       if (
+        userData.age===null ||
+        userData.gender===null ||
+        userData.phn_no===null
+      ) {
+        setShowProfileModal(true);
       }
     }
     fetchUSerDetails();
@@ -89,8 +100,6 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
         withCredentials: true
       });
       console.log(response.data.data);
-      let res_ = response.data.data;
-
       if (response.data.data != null) {
         setAppointments(response.data.data);
       }
@@ -229,8 +238,17 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gray-50">
+       <PatientProfileSetup
+
+      open={showProfileModal}
+
+      onClose={() => setShowProfileModal(false)}
+
+    />
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

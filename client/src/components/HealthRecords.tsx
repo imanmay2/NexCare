@@ -76,15 +76,15 @@ interface VitalSigns {
 }
 
 interface MedicalSummary {
-    bloodType: string;
-    allergies: string[];
-    currentMedications: string[];
-    medicalConditions: string[];
-    emergencyContacts: {
-        name: string;
-        phone: string;
-    }[];
-    insurance: string;
+  bloodType: string;
+  allergies: string[];
+  currentMedications: string[];
+  medicalConditions: string[];
+  emergencyContacts: {
+    name: string;
+    phone: string;
+  }[];
+  insurance: string;
 }
 
 export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) {
@@ -202,57 +202,149 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
   const t = translations[language];
 
   // Mock data
-  const medicalRecords: MedicalRecord[] = [
-    {
-      id: '1',
-      type: 'consultation',
-      date: '2024-12-15',
-      doctor: 'Dr. Priya Sharma',
-      title: 'General Check-up',
-      summary: 'Routine health examination with vital signs assessment',
-      details: {
-        symptoms: 'Fever, body ache',
-        diagnosis: 'Viral fever',
-        treatment: 'Rest, hydration, paracetamol'
-      },
-      status: 'final'
-    },
-    {
-      id: '2',
-      type: 'prescription',
-      date: '2024-12-15',
-      doctor: 'Dr. Priya Sharma',
-      title: 'Prescription for Viral Fever',
-      summary: 'Medication prescribed for viral fever treatment',
-      details: {
-        medications: [
-          {
-            name: 'Paracetamol 500mg',
-            dosage: '500mg',
-            frequency: 'Twice daily',
-            duration: '5 days',
-            instructions: 'Take after meals'
-          }
-        ]
-      },
-      status: 'final'
-    },
-    {
-      id: '3',
-      type: 'lab-result',
-      date: '2024-12-10',
-      doctor: 'Dr. Rajesh Kumar',
-      title: 'Blood Test Results',
-      summary: 'Complete blood count and basic metabolic panel',
-      details: {
-        results: [
-          { parameter: 'Hemoglobin', value: '13.5 g/dL', normal: '12-16 g/dL', status: 'normal' },
-          { parameter: 'Blood Sugar', value: '95 mg/dL', normal: '70-100 mg/dL', status: 'normal' }
-        ]
-      },
-      status: 'final'
+  // const medicalRecords: MedicalRecord[] = [
+  //   {
+  //     id: '1',
+  //     type: 'consultation',
+  //     date: '2024-12-15',
+  //     doctor: 'Dr. Priya Sharma',
+  //     title: 'General Check-up',
+  //     summary: 'Routine health examination with vital signs assessment',
+  //     details: {
+  //       symptoms: 'Fever, body ache',
+  //       diagnosis: 'Viral fever',
+  //       treatment: 'Rest, hydration, paracetamol'
+  //     },
+  //     status: 'final'
+  //   },
+  //   {
+  //     id: '2',
+  //     type: 'prescription',
+  //     date: '2024-12-15',
+  //     doctor: 'Dr. Priya Sharma',
+  //     title: 'Prescription for Viral Fever',
+  //     summary: 'Medication prescribed for viral fever treatment',
+  //     details: {
+  //       medications: [
+  //         {
+  //           name: 'Paracetamol 500mg',
+  //           dosage: '500mg',
+  //           frequency: 'Twice daily',
+  //           duration: '5 days',
+  //           instructions: 'Take after meals'
+  //         }
+  //       ]
+  //     },
+  //     status: 'final'
+  //   },
+  //   {
+  //     id: '3',
+  //     type: 'lab-result',
+  //     date: '2024-12-10',
+  //     doctor: 'Dr. Rajesh Kumar',
+  //     title: 'Blood Test Results',
+  //     summary: 'Complete blood count and basic metabolic panel',
+  //     details: {
+  //       results: [
+  //         { parameter: 'Hemoglobin', value: '13.5 g/dL', normal: '12-16 g/dL', status: 'normal' },
+  //         { parameter: 'Blood Sugar', value: '95 mg/dL', normal: '70-100 mg/dL', status: 'normal' }
+  //       ]
+  //     },
+  //     status: 'final'
+  //   }
+  // ];
+
+  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
+
+
+  //fetch the medical records from the api and update the state.
+  useEffect(() => {
+    let fetchapi1 = async () => {
+      try {
+        let response = await axios.get(`http://localhost:8090/patient/labResults`, {
+          withCredentials: true
+        });
+        let data = response.data.data;
+        // let records: MedicalRecord[] = data.map((record: any) => ({
+        //   id: record.id,
+        //   type: 'lab-result',
+        //   date: record.created_at.split("T")[0],
+        //   doctor: record.name,
+        //   title: record.test_group,
+        //   summary: record.summary,
+        //   details: {
+        //     results: record.results.map((res: any) => ({
+        //       parameter: res.parameter,
+        //       value: res.value,
+        //       normal: res.normal,
+        //       status: res.status            }))
+        //   },
+        //   status: 'final'
+        // }));
+        const formattedData = data.data.map((item: any) => {
+
+          // converting object -> array
+          const resultsArray = Object.entries(item.results).map(
+            ([parameter, values]: any) => ({
+              parameter,
+              value: `${values.value} ${values.unit}`,
+              normal: `${values.min_value}-${values.max_value} ${values.unit}`,
+              status:
+                values.value >= values.min_value &&
+                  values.value <= values.max_value
+                  ? "normal"
+                  : "abnormal",
+            })
+          );
+          return {
+            id: item.id,
+            type: "lab-result",
+            date: item.created_at.split("T")[0],
+            doctor: item.name,
+            title: `${item.test_group} Test Results`,
+            summary: item.summary,
+            details: {
+              results: resultsArray,
+            },
+            status: "final",
+          };
+        });
+
+        // console.log("FORMATTED DATA :", formattedData);
+        setMedicalRecords(formattedData);
+      } catch (error) {
+        console.error('Error fetching medical records:', error);
+      }
     }
-  ];
+
+    let fetchapi2 = async () => {
+      try {
+        let response = await axios.get(`http://localhost:8090/patient/consultationdata`, {
+          withCredentials: true
+        });
+        let data = response.data.data;
+        let records: MedicalRecord[] = data.map((record: any) => ({
+          id: record.id,
+          type: 'consultation',
+          date: record.created_at.split("T")[0],
+          doctor: record.name,
+          title: record.title,
+          summary: record.summary,
+          details: {
+            symptoms: record.symptoms,
+            diagnosis: record.diagnosis,
+            treatment: record.treatment
+          },
+          status: 'final'
+        }));
+        setMedicalRecords(records);
+      } catch (error) {
+        console.error('Error fetching medical records:', error);
+      }
+    }
+    fetchapi1();
+    fetchapi2();
+  }, [])
 
   const [vitalSigns, setVitalSigns] = useState<VitalSigns[]>([]);
 
@@ -268,24 +360,24 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
         let vitalSignsData: VitalSigns[] = data.map((record: any) => ({
           id: record.id,
           date: record.created_at.split("T")[0],
-          bloodPressure: record.bp.sys+"/"+record.bp.dia,
+          bloodPressure: record.bp.sys + "/" + record.bp.dia,
           heartRate: record.heart_rate,
-          temperature: record.temp+"°F",
-          weight: record.weight+"kg",
-          height: record.height+"m",
-          bmi:( record.weight/(record.height*record.height)).toFixed(4),
+          temperature: record.temp + "°F",
+          weight: record.weight + "kg",
+          height: record.height + "m",
+          bmi: (record.weight / (record.height * record.height)).toFixed(4),
           spo2: record.spo2
         }));
         setVitalSigns(vitalSignsData);
       } catch (error) {
         console.error('Error fetching health records:', error);
       }
-    } 
+    }
     fetchData();
   }, []);
 
-  
-  const [medicalSummary,setMedicalSummary]=useState<MedicalSummary>();
+
+  const [medicalSummary, setMedicalSummary] = useState<MedicalSummary>();
   //fetch the details for Medcial Summary.
   useEffect(() => {
     let fetchMedicalSummary = async () => {
@@ -299,7 +391,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
         allergies: data.allergies.split(","),
         currentMedications: data.current_medications.split(","),
         medicalConditions: data.medical_conditions.split(","),
-        emergencyContacts: data.contacts.map((c: any) => ({ name: c.relation +":"+c.name, phone: c.phn_no })),
+        emergencyContacts: data.contacts.map((c: any) => ({ name: c.relation + ":" + c.name, phone: c.phn_no })),
         insurance: data.insurance
       };
       setMedicalSummary(summary);
