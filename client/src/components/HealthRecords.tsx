@@ -230,7 +230,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
   //           name: 'Paracetamol 500mg',
   //           dosage: '500mg',
   //           frequency: 'Twice daily',
-  //           duration: '5 days',
+  //             duration: '5 days',
   //           instructions: 'Take after meals'
   //         }
   //       ]
@@ -277,12 +277,11 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
         //       parameter: res.parameter,
         //       value: res.value,
         //       normal: res.normal,
-        //       status: res.status            }))
+        //       status: res.status}))
         //   },
         //   status: 'final'
         // }));
-        const formattedData = data.data.map((item: any) => {
-
+        const formattedData = data.map((item: any) => {
           // converting object -> array
           const resultsArray = Object.entries(item.results).map(
             ([parameter, values]: any) => ({
@@ -296,6 +295,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
                   : "abnormal",
             })
           );
+          console.log("RESULTS ARRAY :", resultsArray);
           return {
             id: item.id,
             type: "lab-result",
@@ -311,7 +311,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
         });
 
         // console.log("FORMATTED DATA :", formattedData);
-        setMedicalRecords(formattedData);
+        setMedicalRecords((prev) => [...prev, ...formattedData]);
       } catch (error) {
         console.error('Error fetching medical records:', error);
       }
@@ -337,7 +337,20 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
           },
           status: 'final'
         }));
-        setMedicalRecords(records);
+        setMedicalRecords((prev) => [...prev, ...records]);
+        let prescriptions: MedicalRecord[] = data.map((record: any) => ({
+          id: record.id,
+          type: 'prescription',
+          date: record.created_at.split("T")[0],
+          doctor: record.name,
+          title: `Prescription for ${record.title}`,
+          summary: `Medications prescribed for ${record.title}`,
+          details: {
+            medications: record.drug
+          },
+          status: 'final'
+        }));
+        setMedicalRecords((prev) => [...prev, ...prescriptions]);
       } catch (error) {
         console.error('Error fetching medical records:', error);
       }
@@ -650,7 +663,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
                               <div><strong>{t.dosage}:</strong> {med.dosage}</div>
                               <div><strong>{t.frequency}:</strong> {med.frequency}</div>
                               <div><strong>Duration:</strong> {med.duration}</div>
-                              <div><strong>{t.instructions}:</strong> {med.instructions}</div>
+                              <div><strong>{t.instructions}:</strong> {med.instruction}</div>
                             </div>
                           </div>
                         ))}

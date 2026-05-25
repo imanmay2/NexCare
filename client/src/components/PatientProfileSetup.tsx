@@ -70,7 +70,8 @@ export default function FirstTimeProfileModal({
                             placeholder="Enter age"
                             value={formData.age}
                             onChange={handleChange}
-                            className="w-full mt-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full mt-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500" required
+
                         />
                     </div>
                     {/* Gender */}
@@ -82,7 +83,7 @@ export default function FirstTimeProfileModal({
                             name="gender"
                             value={formData.gender}
                             onChange={handleChange}
-                            className="w-full mt-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full mt-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500" required
                         >
                             <option value="">Select Gender</option>
                             <option value="male">Male</option>
@@ -101,7 +102,7 @@ export default function FirstTimeProfileModal({
                             placeholder="Enter phone number"
                             value={formData.phn_no}
                             onChange={handleChange}
-                            className="w-full mt-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full mt-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500" required
                         />
                     </div>
                     {/* Button */}
