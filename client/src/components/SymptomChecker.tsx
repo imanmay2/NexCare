@@ -224,10 +224,37 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
   const startVoiceInput = () => {
     setIsListening(true);
     // Mock voice input - in real app would use Speech Recognition API
-    setTimeout(() => {
-      setSymptoms(prev => prev + " [Voice input simulated] ");
-      setIsListening(false);
-    }, 3000);
+      // browser support
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Speech Recognition not supported");
+        return;
+      }
+      // create instance
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      // when voice converted
+      recognition.onresult = (event: any) => {
+        const transcript =
+          event.results[0][0].transcript;
+        console.log(transcript);
+        setSymptoms(transcript);
+      };
+      recognition.onerror = (event: any) => {
+        console.log(event.error);
+      };
+      // start mic
+      recognition.start();
+    
+
+    // setTimeout(() => {
+    //   setSymptoms(prev => prev + " [Voice input simulated] ");
+    //   setIsListening(false);
+    // }, 3000);
   };
 
   const getUrgencyColor = (urgency: string) => {
@@ -381,8 +408,8 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                         setSymptoms(prev => prev + ` [Pain/discomfort in ${part.name.toLowerCase()}] `);
                       }}
                       className={`absolute transform -translate-x-1/2 -translate-y-1/2 p-3 rounded-full border-2 transition-all hover:scale-110 ${selectedBodyPart === part.id
-                          ? 'bg-red-100 border-red-500 text-red-700 shadow-lg'
-                          : 'bg-white border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        ? 'bg-red-100 border-red-500 text-red-700 shadow-lg'
+                        : 'bg-white border-gray-300 hover:border-blue-400 hover:bg-blue-50'
                         }`}
                       style={{ top: part.position.top, left: part.position.left }}
                       title={`Click if you have pain in ${part.name.toLowerCase()}`}

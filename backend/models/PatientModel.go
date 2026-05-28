@@ -110,8 +110,8 @@ type LabResult struct{
 type SymptomResult struct{
     Assessment string ` json:"assessment" `
     Urgency string ` json:"urgency" `
-    Recommendation string ` json:"recommendation" `
+    Recommendation string ` json:"recommendations" `
     Confidence float64 ` json:"confidence" `
-    Next_steps string ` json:"next_steps" `
-    Should_Consult bool ` json:"should_consult" `
+    Next_steps string ` json:"nextSteps" `
+    Should_Consult bool ` json:"shouldConsult" `
 }
