@@ -19,9 +19,10 @@ import {
   Activity,
   Brain,
   Eye,
-  Ear
+  Ear,
+  Axis3DIcon
 } from 'lucide-react';
-
+import axios from 'axios';
 interface User {
   id: string;
   name: string;
@@ -39,7 +40,7 @@ interface SymptomCheckerProps {
 interface SymptomResult {
   assessment: string;
   urgency: 'low' | 'medium' | 'high' | 'emergency';
-  recommendations: string[];
+  recommendation: string[];
   confidence: number;
   nextSteps: string[];
   shouldConsult: boolean;
@@ -160,64 +161,34 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
   const analyzeSymptoms = async () => {
     setIsAnalyzing(true);
 
+    // let mockResult: SymptomResult = {
+    //   assessment: "General health concern requiring evaluation",
+    //   urgency: 'low',
+    //   recommendations: [
+    //     "Monitor symptoms for 24-48 hours",
+    //     "Maintain good hygiene",
+    //     "Stay hydrated and rest"
+    //   ],
+    //   confidence: 70,
+    //   nextSteps: [
+    //     "Consider teleconsultation if symptoms persist",
+    //     "Keep a symptom diary"
+    //   ],
+    //   shouldConsult: false
+    // };
+
+    try {
+      const resp = await axios.post('http://localhost:8090/patient/symptomChecker', { symptoms }, { withCredentials: true });
+      if (resp?.data?.data) {
+        let mockResult = resp.data.data;
+        setResult(mockResult);
+        console.log("Response from backend:", mockResult);
+      }
+    } catch (error) {
+      console.error("Symptom analysis failed:", error);
+    }
     // Simulate AI processing
     await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Mock analysis based on keywords
-    const symptomsLower = symptoms.toLowerCase();
-    let mockResult: SymptomResult;
-
-    if (symptomsLower.includes('chest pain') || symptomsLower.includes('breathing')) {
-      mockResult = {
-        assessment: "Possible respiratory or cardiac concern",
-        urgency: 'high',
-        recommendations: [
-          "Seek immediate medical attention",
-          "Monitor breathing carefully",
-          "Rest and avoid physical exertion"
-        ],
-        confidence: 75,
-        nextSteps: [
-          "Visit emergency room if symptoms worsen",
-          "Contact emergency services: 102"
-        ],
-        shouldConsult: true
-      };
-    } else if (symptomsLower.includes('fever') || symptomsLower.includes('headache')) {
-      mockResult = {
-        assessment: "Possible viral infection or common cold",
-        urgency: 'medium',
-        recommendations: [
-          "Rest and stay hydrated",
-          "Take paracetamol for fever",
-          "Monitor temperature regularly"
-        ],
-        confidence: 85,
-        nextSteps: [
-          "Schedule teleconsultation within 24 hours",
-          "Visit doctor if fever exceeds 102°F"
-        ],
-        shouldConsult: true
-      };
-    } else {
-      mockResult = {
-        assessment: "General health concern requiring evaluation",
-        urgency: 'low',
-        recommendations: [
-          "Monitor symptoms for 24-48 hours",
-          "Maintain good hygiene",
-          "Stay hydrated and rest"
-        ],
-        confidence: 70,
-        nextSteps: [
-          "Consider teleconsultation if symptoms persist",
-          "Keep a symptom diary"
-        ],
-        shouldConsult: false
-      };
-    }
-
-    setResult(mockResult);
     setIsAnalyzing(false);
   };
 
@@ -482,7 +453,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                   <div>
                     <h4 className="font-medium mb-2">{t.recommendations}</h4>
                     <ul className="space-y-1">
-                      {result.recommendations.map((rec, index) => (
+                      {result.recommendation.map((rec, index) => (
                         <li key={index} className="flex items-start space-x-2">
                           <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                           <span className="text-sm">{rec}</span>

@@ -179,7 +179,7 @@ func GetLabResults(ctx *gin.Context) {
 	var rawjson []byte
 	for row.Next() {
 		var data model.LabResult
-		err := row.Scan(&data.Id, &data.P_id, &data.D_id, &data.Test_group, &data.Created_At, &data.Summary,&data.Name, &rawjson)
+		err := row.Scan(&data.Id, &data.P_id, &data.D_id, &data.Test_group, &data.Created_At, &data.Summary, &data.Name, &rawjson)
 		if err != nil {
 			fmt.Printf("Error in scanning lab result : %s", err.Error())
 			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in fetching lab result", "success": false})
@@ -198,7 +198,7 @@ func GetLabResults(ctx *gin.Context) {
 
 // Controller for the AI Symptom Checker..
 func SymptomChecker(ctx *gin.Context) {
-	var userInput string
+	var userInput struct{ Symptoms string `json:"symptoms" ` }
 	err := ctx.ShouldBindJSON(&userInput)
 	if err != nil {
 		fmt.Println("Error in binding the user input : ", err.Error())
@@ -207,15 +207,22 @@ func SymptomChecker(ctx *gin.Context) {
 	}
 
 	//call the function to analyze the symptoms and get the result.
-	fmt.Println("User input : ", userInput)
-	result, flag := ai.AnalyzeSymptom(userInput)
+	fmt.Println("User input : ", userInput.Symptoms)
+	resp, flag := ai.AnalyzeSymptom(userInput.Symptoms)
 	if !flag {
 		fmt.Println("Error in analyzing the symptoms")
 		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in analyzing the symptoms", "success": false})
 		return
 	}
-	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Data fetched successfully", "data": result, "success": true})
 
+	var result model.SymptomResult
+	err = json.Unmarshal([]byte(resp), &result)
+	if err != nil {
+		fmt.Println("Error unmarshaling :", err)
+		return
+	}
+	// fmt.Println("Symptom Checker Result : ", result)
+	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Data fetched successfully", "data": result, "success": true})
 }
 
 // Controller for fetching the latest health metrics of the patient.
@@ -240,8 +247,7 @@ func GetLatestHealthMetrics(ctx *gin.Context) {
 	ctx.IndentedJSON(http.StatusOK, gin.H{"Message": "Latest Health Metrics fetched successfully", "success": true, "data": latestMetrics})
 }
 
-
-///Patch request for updating the profile data of the patient.
+// /Patch request for updating the profile data of the patient.
 func UpdatePatientData(ctx *gin.Context) {
 	userID := ctx.GetString("userID")
 	var profileData model.UpdatePatientData
