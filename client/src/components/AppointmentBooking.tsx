@@ -33,9 +33,10 @@ interface User {
 
 interface Appointment {
   id: string;
+  d_id:string;
   doctorName: string;
-  date: string;
-  time: string;
+  date: Date;
+  time: Date;
   type: 'video' | 'audio' | 'in-person';
   status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
@@ -282,20 +283,21 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
     setIsBooking(true);
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // await new Promise(resolve => setTimeout(resolve, 2000));
 
     const doctor = doctors.find(d => d.d_id === selectedDoctor);
     const newAppointment: Appointment = {
       id: Date.now().toString(),
+      d_id: doctor?.d_id || '',
       doctorName: doctor?.name || 'Unknown Doctor',
-      date: selectedDate.toISOString().split('T')[0],
-      time: selectedTime,
+      date: new Date(selectedDate.toISOString().split('T')[0]),
+      time: new Date(`1970-01-01T${selectedTime}:00`),
       type: consultationType,
       status: 'upcoming',
       symptoms: symptoms
     };
 
-    console.log(newAppointment); //testing the selected information.
+    console.log("--->>>New Appointment : ->>>",newAppointment); //testing the selected information.
     //hit the post request api
     const response = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
     const data = response.data;
@@ -562,7 +564,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                         <div>
                           <h4 className="font-medium">{appointment.doctorName}</h4>
                           <p className="text-sm text-gray-600">
-                            {appointment.date} at {appointment.time}
+                            {appointment.date.toString()} at {appointment.time.toString()}
                           </p>
                           <Badge className={getAppointmentTypeColor(appointment.type)}>
                             {t[appointment.type === 'in-person' ? 'inPerson' : appointment.type]}
@@ -607,7 +609,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                         <div>
                           <h4 className="font-medium">{appointment.doctorName}</h4>
                           <p className="text-sm text-gray-600">
-                            {appointment.date} at {appointment.time}
+                            {appointment.date.toString()} at {appointment.time.toString()}
                           </p>
                           <Badge variant="secondary">Completed</Badge>
                         </div>

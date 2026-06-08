@@ -33,9 +33,10 @@ interface User {
 
 interface Appointment {
   id: string;
+  d_id:string;
   doctorName: string;
-  date: string;
-  time: string;
+  date: Date;
+  time: Date;
   type: 'video' | 'audio' | 'in-person';
   status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;

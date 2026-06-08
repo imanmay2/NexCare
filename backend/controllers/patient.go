@@ -63,7 +63,7 @@ func PostAppointment(ctx *gin.Context) {
 	// fmt.Println("check ck 1")
 	if err != nil {
 		// fmt.Println("check ck 2")
-		ctx.IndentedJSON(500, gin.H{"Message": "err.Error()", "success": false})
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
 	//push the data in the appointment table.

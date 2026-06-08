@@ -377,8 +377,8 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
           heartRate: record.heart_rate,
           temperature: record.temp + "°F",
           weight: record.weight + "kg",
-          height: record.height + "m",
-          bmi: (record.weight / (record.height * record.height)).toFixed(4),
+          height: record.height + "cm",
+          bmi: (record.weight*10000 / (record.height * record.height)).toFixed(4),
           spo2: record.spo2
         }));
         setVitalSigns(vitalSignsData);
