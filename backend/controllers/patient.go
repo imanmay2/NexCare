@@ -8,10 +8,10 @@ import (
 	conn "nexcare/backend/config"
 	"nexcare/backend/models"
 	// "os/user"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	ai "nexcare/backend/AI"
+	"time"
 )
 
 func GetPatientInfo(ctx *gin.Context) {
@@ -49,34 +49,83 @@ func GetAppointment(ctx *gin.Context) {
 	for rows.Next() {
 		//upcoming.
 		var appointment model.Appointment
-		rows.Scan(&appointment.Id, &appointment.D_id, &appointment.Date, &appointment.DoctorName, &appointment.Status, &appointment.Symptom, &appointment.Time, &appointment.Type)
+		rows.Scan(&appointment.Id, &appointment.D_id, &appointment.Date, &appointment.DoctorName, &appointment.Status, &appointment.Symptoms, &appointment.Time, &appointment.Type)
 		appointmentData = append(appointmentData, appointment)
 	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Data fetched successfully", "success": true, "data": appointmentData})
 }
 
+// fetch all the boookings for that particular date.
+func GetAllAppointmentDetails(ctx *gin.Context) {
+	//get the upcoming appointment details for patients
+	date, err := time.Parse("2006-01-02", "2026-06-11")
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": "Invalid date format", "success": false})
+		return
+	}
+	// userID := ctx.GetString("userID")
+	var selectedTime []time.Time
+	q1 := " select time from appointment where status='upcoming' AND date=$1 "
+	rows, err := conn.DB.Query(context.Background(), q1, date)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": "Error in fetching all appointment details", "success": false})
+		return
+	}
+
+	for rows.Next() {
+		var t time.Time
+		rows.Scan(&t)
+		selectedTime = append(selectedTime, t)
+	}
+	ctx.IndentedJSON(200, gin.H{"Message": "Selected times fetched successfully", "success": true, "data": selectedTime})
+}
+
 func PostAppointment(ctx *gin.Context) {
 	// fmt.Println("check ck 0")
-	//post request for feeding the appointment details into the database
+	// post request for feeding the appointment details into the database
 	var appointmentDetails model.Appointment
 	err := ctx.ShouldBindJSON(&appointmentDetails)
 	// fmt.Println("check ck 1")
 	if err != nil {
-		// fmt.Println("check ck 2")
+		fmt.Println("check ck 1")
+			
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+
+	dateObj, err := time.Parse("2006-01-02", appointmentDetails.Date)
+	if err != nil {
+		fmt.Println("check ck 2")
+		fmt.Println(err.Error())
+		ctx.IndentedJSON(400, gin.H{
+			"Message": "Invalid date format",
+			"success": false,
+		})
+		return
+	}
+
+	timeObj, err := time.Parse("15:04", appointmentDetails.Time)
+	if err != nil {
+		fmt.Println("check ck 3")
+		fmt.Println(err.Error())
+		ctx.IndentedJSON(400, gin.H{
+			"Message": "Invalid time format",
+			"success": false,
+		})
 		return
 	}
 	//push the data in the appointment table.
 	p_id := ctx.GetString("userID")
 	q2 := `insert into appointment values($1,$2,$3,$4,$5,$6,$7,$8)`
-	fmt.Println("check ck 3")
-	_, err = conn.DB.Exec(context.Background(), q2, uuid.NewString(), p_id, appointmentDetails.D_id, appointmentDetails.Date, appointmentDetails.Time, appointmentDetails.Status, appointmentDetails.Type, appointmentDetails.Symptom)
+	fmt.Println("check ck 4")
+	_, err = conn.DB.Exec(context.Background(), q2, uuid.NewString(), p_id, appointmentDetails.D_id, dateObj, timeObj, appointmentDetails.Status, appointmentDetails.Type, appointmentDetails.Symptoms)
 	if err != nil {
-		fmt.Println("check ck 4")
+		fmt.Println("check ck 5")
+		fmt.Println(err.Error())
 		ctx.IndentedJSON(500, gin.H{"Message": "Could insert data in the appointment table", "success": false})
 		return
 	}
-	fmt.Println("check ck 5")
+	fmt.Println("check ck 6")
 	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Booked Successfully", "success": true})
 }
 
@@ -198,7 +247,9 @@ func GetLabResults(ctx *gin.Context) {
 
 // Controller for the AI Symptom Checker..
 func SymptomChecker(ctx *gin.Context) {
-	var userInput struct{ Symptoms string `json:"symptoms" ` }
+	var userInput struct {
+		Symptoms string `json:"symptoms" `
+	}
 	err := ctx.ShouldBindJSON(&userInput)
 	if err != nil {
 		fmt.Println("Error in binding the user input : ", err.Error())

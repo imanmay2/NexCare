@@ -33,10 +33,10 @@ interface User {
 
 interface Appointment {
   id: string;
-  d_id:string;
+  d_id: string;
   doctorName: string;
-  date: Date;
-  time: Date;
+  date: string;
+  time: string;
   type: 'video' | 'audio' | 'in-person';
   status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
@@ -286,16 +286,23 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
     // await new Promise(resolve => setTimeout(resolve, 2000));
 
     const doctor = doctors.find(d => d.d_id === selectedDoctor);
-    const newAppointment: Appointment = {
-      id: Date.now().toString(),
-      d_id: doctor?.d_id || '',
-      doctorName: doctor?.name || 'Unknown Doctor',
-      date: new Date(selectedDate.toISOString().split('T')[0]),
-      time: new Date(`1970-01-01T${selectedTime}:00`),
-      type: consultationType,
-      status: 'upcoming',
-      symptoms: symptoms
-    };
+  const formattedDate =
+  `${selectedDate.getFullYear()}-${
+    String(selectedDate.getMonth() + 1).padStart(2, "0")
+  }-${
+    String(selectedDate.getDate()).padStart(2, "0")
+  }`;
+
+const newAppointment: Appointment = {
+  id: Date.now().toString(),
+  d_id: doctor?.d_id || '',
+  doctorName: doctor?.name || 'Unknown Doctor',
+  date: formattedDate,
+  time: selectedTime,
+  type: consultationType,
+  status: 'upcoming',
+  symptoms: symptoms
+};
 
     console.log("--->>>New Appointment : ->>>",newAppointment); //testing the selected information.
     //hit the post request api
@@ -564,7 +571,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                         <div>
                           <h4 className="font-medium">{appointment.doctorName}</h4>
                           <p className="text-sm text-gray-600">
-                            {appointment.date.toString()} at {appointment.time.toString()}
+                            {appointment.date} at {appointment.time}
                           </p>
                           <Badge className={getAppointmentTypeColor(appointment.type)}>
                             {t[appointment.type === 'in-person' ? 'inPerson' : appointment.type]}

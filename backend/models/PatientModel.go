@@ -5,14 +5,14 @@ import (
 )
 
 type Appointment struct {
-	Id         string    ` json:"id" binding:"required" `
-	D_id       string    ` json:"d_id"  binding:"required" `
-	Date       time.Time ` json:"date" binding:"required" `
-	DoctorName string    ` json:"doctorName" binding:"required" `
-	Status     string    ` json:"status" binding:"required" `
-	Symptom    string    ` json:"symptoms" binding:"required" `
-	Time       time.Time ` json:"time" binding:"required" `
-	Type       string    ` json:"type" binding:"required" `
+    Id             string `json:"id"`
+    D_id           string `json:"d_id"`
+    DoctorName     string `json:"doctorName"`
+    Date           string `json:"date"`
+    Time           string `json:"time"`
+    Type           string `json:"type"`
+    Status         string `json:"status"`
+    Symptoms       string `json:"symptoms"`
 }
 
 type BloodPressure struct {
