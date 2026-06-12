@@ -38,7 +38,7 @@ func GetDoctorInfo(ctx *gin.Context) {
 func GetAppointment(ctx *gin.Context) {
 	//get the  upcoming appointment details for patients
 	userID := ctx.GetString("userID")
-	q1 := " select a.id,a.d_id,a.date,u.name,a.status,a.symptoms,a.time,a.consultation_type from users u inner join appointment a on u.id=a.d_id where u.role=$1 and p_id=$2"
+	q1 := " select a.id,a.d_id,a.date,u.name,a.status,a.symptoms,a.time,a.consultation_type from users u inner join appointment a on u.id=a.d_id where u.role=$1 and p_id=$2 limit 3"
 	rows, err := conn.DB.Query(context.Background(), q1, "doctor", userID)
 	if err != nil {
 		ctx.IndentedJSON(500, gin.H{"Message": "Error in fetching upcoming appointment", "success": false})
