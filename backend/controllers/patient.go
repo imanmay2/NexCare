@@ -49,7 +49,13 @@ func GetAppointment(ctx *gin.Context) {
 	for rows.Next() {
 		//upcoming.
 		var appointment model.Appointment
-		rows.Scan(&appointment.Id, &appointment.D_id, &appointment.Date, &appointment.DoctorName, &appointment.Status, &appointment.Symptoms, &appointment.Time, &appointment.Type)
+		var appointmentDate time.Time
+		var appointmentTime time.Time
+		if err := rows.Scan(&appointment.Id, &appointment.D_id, &appointmentDate, &appointment.DoctorName, &appointment.Status, &appointment.Symptoms, &appointmentTime, &appointment.Type); err != nil {
+			continue
+		}
+		appointment.Date = appointmentDate.Format("2006-01-02")
+		appointment.Time = appointmentTime.Format("15:04")
 		appointmentData = append(appointmentData, appointment)
 	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Data fetched successfully", "success": true, "data": appointmentData})
