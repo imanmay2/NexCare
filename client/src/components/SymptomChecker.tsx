@@ -19,9 +19,10 @@ import {
   Activity,
   Brain,
   Eye,
-  Ear
+  Ear,
+  Axis3DIcon
 } from 'lucide-react';
-
+import axios from 'axios';
 interface User {
   id: string;
   name: string;
@@ -39,7 +40,7 @@ interface SymptomCheckerProps {
 interface SymptomResult {
   assessment: string;
   urgency: 'low' | 'medium' | 'high' | 'emergency';
-  recommendations: string[];
+  recommendation: string[];
   confidence: number;
   nextSteps: string[];
   shouldConsult: boolean;
@@ -160,74 +161,71 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
   const analyzeSymptoms = async () => {
     setIsAnalyzing(true);
 
+    // let mockResult: SymptomResult = {
+    //   assessment: "General health concern requiring evaluation",
+    //   urgency: 'low',
+    //   recommendations: [
+    //     "Monitor symptoms for 24-48 hours",
+    //     "Maintain good hygiene",
+    //     "Stay hydrated and rest"
+    //   ],
+    //   confidence: 70,
+    //   nextSteps: [
+    //     "Consider teleconsultation if symptoms persist",
+    //     "Keep a symptom diary"
+    //   ],
+    //   shouldConsult: false
+    // };
+
+    try {
+      const resp = await axios.post('http://localhost:8090/patient/symptomChecker', { symptoms }, { withCredentials: true });
+      if (resp?.data?.data) {
+        let mockResult = resp.data.data;
+        setResult(mockResult);
+        console.log("Response from backend:", mockResult);
+      }
+    } catch (error) {
+      console.error("Symptom analysis failed:", error);
+    }
     // Simulate AI processing
     await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Mock analysis based on keywords
-    const symptomsLower = symptoms.toLowerCase();
-    let mockResult: SymptomResult;
-
-    if (symptomsLower.includes('chest pain') || symptomsLower.includes('breathing')) {
-      mockResult = {
-        assessment: "Possible respiratory or cardiac concern",
-        urgency: 'high',
-        recommendations: [
-          "Seek immediate medical attention",
-          "Monitor breathing carefully",
-          "Rest and avoid physical exertion"
-        ],
-        confidence: 75,
-        nextSteps: [
-          "Visit emergency room if symptoms worsen",
-          "Contact emergency services: 102"
-        ],
-        shouldConsult: true
-      };
-    } else if (symptomsLower.includes('fever') || symptomsLower.includes('headache')) {
-      mockResult = {
-        assessment: "Possible viral infection or common cold",
-        urgency: 'medium',
-        recommendations: [
-          "Rest and stay hydrated",
-          "Take paracetamol for fever",
-          "Monitor temperature regularly"
-        ],
-        confidence: 85,
-        nextSteps: [
-          "Schedule teleconsultation within 24 hours",
-          "Visit doctor if fever exceeds 102°F"
-        ],
-        shouldConsult: true
-      };
-    } else {
-      mockResult = {
-        assessment: "General health concern requiring evaluation",
-        urgency: 'low',
-        recommendations: [
-          "Monitor symptoms for 24-48 hours",
-          "Maintain good hygiene",
-          "Stay hydrated and rest"
-        ],
-        confidence: 70,
-        nextSteps: [
-          "Consider teleconsultation if symptoms persist",
-          "Keep a symptom diary"
-        ],
-        shouldConsult: false
-      };
-    }
-
-    setResult(mockResult);
     setIsAnalyzing(false);
   };
 
   const startVoiceInput = () => {
     setIsListening(true);
     // Mock voice input - in real app would use Speech Recognition API
-    setTimeout(() => {
-      setSymptoms(prev => prev + " [Voice input simulated] ");
-      setIsListening(false);
-    }, 3000);
+      // browser support
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Speech Recognition not supported");
+        return;
+      }
+      // create instance
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      // when voice converted
+      recognition.onresult = (event: any) => {
+        const transcript =
+          event.results[0][0].transcript;
+        console.log(transcript);
+        setSymptoms(transcript);
+      };
+      recognition.onerror = (event: any) => {
+        console.log(event.error);
+      };
+      // start mic
+      recognition.start();
+    
+
+    // setTimeout(() => {
+    //   setSymptoms(prev => prev + " [Voice input simulated] ");
+    //   setIsListening(false);
+    // }, 3000);
   };
 
   const getUrgencyColor = (urgency: string) => {
@@ -381,8 +379,8 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                         setSymptoms(prev => prev + ` [Pain/discomfort in ${part.name.toLowerCase()}] `);
                       }}
                       className={`absolute transform -translate-x-1/2 -translate-y-1/2 p-3 rounded-full border-2 transition-all hover:scale-110 ${selectedBodyPart === part.id
-                          ? 'bg-red-100 border-red-500 text-red-700 shadow-lg'
-                          : 'bg-white border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        ? 'bg-red-100 border-red-500 text-red-700 shadow-lg'
+                        : 'bg-white border-gray-300 hover:border-blue-400 hover:bg-blue-50'
                         }`}
                       style={{ top: part.position.top, left: part.position.left }}
                       title={`Click if you have pain in ${part.name.toLowerCase()}`}
@@ -455,7 +453,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
                   <div>
                     <h4 className="font-medium mb-2">{t.recommendations}</h4>
                     <ul className="space-y-1">
-                      {result.recommendations.map((rec, index) => (
+                      {result.recommendation.map((rec, index) => (
                         <li key={index} className="flex items-start space-x-2">
                           <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                           <span className="text-sm">{rec}</span>

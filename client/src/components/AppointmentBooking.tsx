@@ -33,12 +33,14 @@ interface User {
 
 interface Appointment {
   id: string;
+  d_id: string;
   doctorName: string;
   date: string;
   time: string;
   type: 'video' | 'audio' | 'in-person';
   status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
+  paymentId: string;
 }
 
 interface Doctor {
@@ -278,34 +280,122 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
     if (!selectedDate || !selectedTime || !selectedDoctor || !symptoms.trim()) {
       return;
     }
-
     setIsBooking(true);
 
+    let order = await axios.post("http://localhost:8090/payment/createOrder", {
+      amount: doctors.find((doctor)=>{
+        return doctor.d_id === selectedDoctor
+      })?.consultation_fee
+    }, { withCredentials: true });
+    console.log(order.data);
+
+    if (order.data.success == false) {
+      alert("Payment order creation failed. Please try again.");
+      return;
+    }
+
+    if (order.data.success == true) {
+      //if payment order is created successfully then open the razorpay payment modal.
+      // alert("Payment order created. ")
+      console.log((import.meta as any).env.VITE_RAZORPAY_KEY_ID);
+      const options = {
+        key: (import.meta as any).env.VITE_RAZORPAY_KEY_ID,
+        amount: order.data.data.amount,
+        currency: order.data.data.currency,
+        name: "NexCare",
+        description: "Doctor Consultation",
+        order_id: order.data.data.id,
+        handler:async function (response: any) {
+          // alert("Payment successful!");
+          console.log("PAYMENT SUCCESS");
+          console.log(response);
+          //call the verify payment api to verify the signature and payment details.
+          let resp =await axios.post("http://localhost:8090/payment/verifyPayment", {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature
+          }, { withCredentials: true })
+
+          if (!resp.data.success) {
+            alert("Payment Failed. Please try again.");
+            return;
+          }
+
+
+          //call the book appointment api to save the appointment details in the database.
+          const doctor = doctors.find(d => d.d_id === selectedDoctor);
+          const formattedDate =
+            `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")
+            }-${String(selectedDate.getDate()).padStart(2, "0")
+            }`;
+
+          const newAppointment: Appointment = {
+            id: Date.now().toString(),
+            d_id: doctor?.d_id || '',
+            doctorName: doctor?.name || 'Unknown Doctor',
+            date: formattedDate,
+            time: selectedTime,
+            type: consultationType,
+            status: 'upcoming',
+            symptoms: symptoms,
+            paymentId: resp.data.payment_id
+          };
+
+          console.log("--->>>New Appointment : ->>>", newAppointment); //testing the selected information.
+          //hit the post request api
+          const response1 = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
+          const data = response1.data;
+          console.log(data);
+          if (!data.success) {
+            alert("Failed to book appointment. Please contact support.");
+            return;
+          }
+          // setAppointments(prev => [...prev, newAppointment]); instead save in database. 
+          setShowBookingForm(false);
+          setSelectedTime('');
+          setSymptoms('');
+          setIsBooking(false);
+        }
+      };
+
+      //open the razorpay payment modal UI.
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+      // return;
+    }
+
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // await new Promise(resolve => setTimeout(resolve, 2000));
+    //uncomment
+    // const doctor = doctors.find(d => d.d_id === selectedDoctor);
+    // const formattedDate =
+    //   `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")
+    //   }-${String(selectedDate.getDate()).padStart(2, "0")
+    //   }`;
 
-    const doctor = doctors.find(d => d.d_id === selectedDoctor);
-    const newAppointment: Appointment = {
-      id: Date.now().toString(),
-      doctorName: doctor?.name || 'Unknown Doctor',
-      date: selectedDate.toISOString().split('T')[0],
-      time: selectedTime,
-      type: consultationType,
-      status: 'upcoming',
-      symptoms: symptoms
-    };
+    // const newAppointment: Appointment = {
+    //   id: Date.now().toString(),
+    //   d_id: doctor?.d_id || '',
+    //   doctorName: doctor?.name || 'Unknown Doctor',
+    //   date: formattedDate,
+    //   time: selectedTime,
+    //   type: consultationType,
+    //   status: 'upcoming',
+    //   symptoms: symptoms
+    // };
 
-    console.log(newAppointment); //testing the selected information.
-    //hit the post request api
-    const response = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
-    const data = response.data;
-    console.log(data);
+    // console.log("--->>>New Appointment : ->>>", newAppointment); //testing the selected information.
+    // //hit the post request api
+    // const response = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
+    // const data = response.data;
+    // console.log(data);
 
-    // setAppointments(prev => [...prev, newAppointment]); instead save in database. 
-    setShowBookingForm(false);
-    setSelectedTime('');
-    setSymptoms('');
-    setIsBooking(false);
+    // // setAppointments(prev => [...prev, newAppointment]); instead save in database. 
+    // setShowBookingForm(false);
+    // setSelectedTime('');
+    // setSymptoms('');
+    // setIsBooking(false);
   };
 
   const getAppointmentIcon = (type: string) => {
@@ -547,7 +637,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
       {/* Upcoming Appointments */}
       <Card>
         <CardHeader>
-          <CardTitle>{t.upcoming}</CardTitle>
+          <CardTitle>Appointments</CardTitle>
         </CardHeader>
         <CardContent>
           {appointments.filter(apt => apt.status === 'upcoming').length > 0 ? (
@@ -607,7 +697,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                         <div>
                           <h4 className="font-medium">{appointment.doctorName}</h4>
                           <p className="text-sm text-gray-600">
-                            {appointment.date} at {appointment.time}
+                            {appointment.date.toString()} at {appointment.time.toString()}
                           </p>
                           <Badge variant="secondary">Completed</Badge>
                         </div>

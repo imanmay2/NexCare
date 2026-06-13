@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
+import PatientProfileSetup from './PatientProfileSetup';
 import {
   Calendar,
   Video,
@@ -31,13 +32,17 @@ import { HealthRecords } from './HealthRecords';
 import { PharmacyLocator } from './PharmacyLocator';
 import { ConsultationModal } from './ConsultationModal';
 import axios from 'axios';
-
 interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
   email: string;
+  gen_id: "PX-001MC26";
+  profileURL?: string;
   language: 'en' | 'hi' | 'pa';
+  age?: number;
+  gender?:string;
+  phn_no?: string;
 }
 
 interface PatientDashboardProps {
@@ -65,30 +70,64 @@ interface HealthMetric {
 }
 
 export function PatientDashboard({ user, onLogout, language, isOnline }: PatientDashboardProps) {
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  //Fetch the gen_id  and print the user's gen_id.
+  useEffect(() => {
+    let fetchUSerDetails = async () => {
+      let response = await axios.get("http://localhost:8090/users/me", {
+        withCredentials: true
+      });
+      let userData=response.data.data;
+      if (userData != null) {
+        user.gen_id = userData.gen_id;
+      }
+       if (
+        userData.age===null ||
+        userData.gender===null ||
+        userData.phn_no===null
+      ) {
+        setShowProfileModal(true);
+      }
+    }
+    fetchUSerDetails();
+  }, []);
 
   //use the useEffect for the fetching the data from the backend and set the state for the appointments.
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  useEffect(()=>{
-    let fetchappointmentData=async()=>{
-      let response=await axios.get("http://localhost:8090/patient/getAppointment",{
-        withCredentials:true
+  useEffect(() => {
+    let fetchappointmentData = async () => {
+      let response = await axios.get("http://localhost:8090/patient/getAppointment", {
+        withCredentials: true
       });
       console.log(response.data.data);
-      let res_=response.data.data;
-      
-      if(response.data.data!=null){
+      if (response.data.data != null) {
         setAppointments(response.data.data);
       }
     }
     fetchappointmentData();
-  },[])
-
-  const [healthMetrics] = useState<HealthMetric[]>([
-    { type: 'Blood Pressure', value: '120/80', date: '2024-12-15', status: 'normal' },
-    { type: 'Temperature', value: '99.2°F', date: '2024-12-17', status: 'attention' },
-    { type: 'Heart Rate', value: '78 bpm', date: '2024-12-17', status: 'normal' }
-  ]);
-
+  }, [])
+  const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>([]);
+  useEffect(() => {
+    const fetchLatestHealthMetrics = async () => {
+      try {
+        const response = await axios.get("http://localhost:8090/patient/getlatesthealthmetrics", {
+          withCredentials: true
+        });
+        if (response.data?.data != null) {
+          let data:any=response.data.data;
+          let metrics:HealthMetric[] = [
+            { type: 'Blood Pressure', value: data.bp.sys+"/"+data.bp.dia, date: data.created_at.split("T")[0], status: 'normal' },
+            { type: 'Temperature', value: data.temp+"°F", date: data.created_at.split("T")[0], status: 'attention' },
+            { type: 'Heart Rate', value: data.heart_rate+' bpm', date:data.created_at.split("T")[0], status: 'normal' }
+          ]
+          setHealthMetrics(metrics);
+        }
+      } catch (error) {
+        console.error('Failed to fetch latest health metrics', error);
+      }
+    };
+    fetchLatestHealthMetrics();
+  }, []);
   const [lastSync, setLastSync] = useState<Date>(new Date());
   const [consultationModal, setConsultationModal] = useState<{
     isOpen: boolean;
@@ -199,8 +238,17 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gray-50">
+       <PatientProfileSetup
+
+      open={showProfileModal}
+
+      onClose={() => setShowProfileModal(false)}
+
+    />
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -214,6 +262,8 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{t.welcome}, {user.name}</h1>
                 <p className="text-sm text-gray-600">{user.email}</p>
+                <p className="text-sm text-gray-600">ID : {user.gen_id}</p>
+
               </div>
             </div>
 
