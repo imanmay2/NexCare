@@ -52,7 +52,8 @@ export const HealthMetricsOverlay = ({ isOpen, onClose, patientId, oldHealthReco
                         spo2: parseFloat(spo2),
                         temp: parseFloat(temp),
                         height: parseFloat(height),
-                        heart_rate: parseFloat(heartRate)
+                        heart_rate: parseFloat(heartRate),
+                        created_at: new Date().toISOString()
                     });
                 }
                 onClose();

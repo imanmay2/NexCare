@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -121,8 +122,42 @@ func UpdateProfileData(ctx *gin.Context) {
 	ctx.IndentedJSON(200, gin.H{"Message": "Doctor Info Updated Successfully", "success": true})
 }
 
-func GetAppointments() {
-	// Get the list of appointments for the doctor
+func GetAppointments(ctx *gin.Context) {
+	//get the  upcoming appointment details for doctor
+	userID := ctx.GetString("userID")
+	fmt.Println(userID)
+	q1 := "select a.id,	a.p_id, a.date, u.name, u.age, u.gender, u.profile_url, a.status, a.symptoms, a.time, a.consultation_type from users u inner join appointment a on u.id=a.p_id where a.d_id=$1  AND a.date >= CURRENT_DATE"
+	rows, err := conn.DB.Query(context.Background(), q1, userID)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": "Error in fetching upcoming appointment", "success": false})
+		return
+	}
+
+	var appointmentData []model.DoctorAppointment
+	for rows.Next() {
+		//upcoming.
+		var appointment model.DoctorAppointment
+		var profileUrl sql.NullString
+		if err := rows.Scan(&appointment.Id,
+			&appointment.P_id,
+			&appointment.Date,
+			&appointment.PatientName,
+			&appointment.Age,
+			&appointment.Gender,
+			&profileUrl,
+			&appointment.Status,
+			&appointment.Symptom,
+			&appointment.Time,
+			&appointment.Type); err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
+		if profileUrl.Valid {
+			appointment.ProfileURL = profileUrl.String
+		}
+		appointmentData = append(appointmentData, appointment)
+	}
+	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Data fetched successfully", "success": true, "data": appointmentData})
 
 }
 

@@ -64,9 +64,11 @@ interface Consultation {
   id: string;
   patientName: string;
   patientAge: number;
+  gender: string;
   time: string;
+  date: string;
   type: 'video' | 'audio' | 'in-person';
-  status: 'waiting' | 'in-progress' | 'completed';
+  status: 'upcoming' | 'in-progress' | 'completed';
   symptoms: string;
   urgency: 'low' | 'medium' | 'high';
 }
@@ -76,37 +78,37 @@ type TimeSlot = { id: number, start: string; end: string };
 type TimeSlots = Record<string, TimeSlot[]>;
 
 export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, doctorData, setDoctorData }: DoctorDashboardProps) {
-  const [consultations] = useState<Consultation[]>([
-    {
-      id: '1',
-      patientName: 'Amar Singh',
-      patientAge: 35,
-      time: '14:30',
-      type: 'video',
-      status: 'waiting',
-      symptoms: 'Fever, body ache, mild cough',
-      urgency: 'medium'
-    },
-    {
-      id: '2',
-      patientName: 'Simran Kaur',
-      patientAge: 28,
-      time: '15:00',
-      type: 'audio',
-      status: 'waiting',
-      symptoms: 'Headache, nausea',
-      urgency: 'low'
-    },
-    {
-      id: '3',
-      patientName: 'Ravi Kumar',
-      patientAge: 45,
-      time: '15:30',
-      type: 'in-person',
-      status: 'completed',
-      symptoms: 'Chest pain, shortness of breath',
-      urgency: 'high'
-    }
+  const [consultations, setConsultations] = useState<Consultation[]>([
+    // {
+    //   id: '1',
+    //   patientName: 'Amar Singh',
+    //   patientAge: 35,
+    //   time: '14:30',
+    //   type: 'video',
+    //   status: 'waiting',
+    //   symptoms: 'Fever, body ache, mild cough',
+    //   urgency: 'medium'
+    // },
+    // {
+    //   id: '2',
+    //   patientName: 'Simran Kaur',
+    //   patientAge: 28,
+    //   time: '15:00',
+    //   type: 'audio',
+    //   status: 'waiting',
+    //   symptoms: 'Headache, nausea',
+    //   urgency: 'low'
+    // },
+    // {
+    //   id: '3',
+    //   patientName: 'Ravi Kumar',
+    //   patientAge: 45,
+    //   time: '15:30',
+    //   type: 'in-person',
+    //   status: 'completed',
+    //   symptoms: 'Chest pain, shortness of breath',
+    //   urgency: 'high'
+    // }
   ]);
 
   const { showToast } = useError();
@@ -136,6 +138,17 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
         }
       }).catch((err) => {
         showToast("Error in fetching schedule...", false);
+      })
+
+    axios.get("http://localhost:8090/doctor/getAppointments", { withCredentials: true })
+      .then((res) => {
+        const data = res.data;
+        if (res.status === 200) {
+          console.log(data.data);
+          setConsultations(data.data);
+        }
+      }).catch((err) => {
+        showToast(`Error is fetching consulations... ${err}`, false);
       })
   }, [])
 
@@ -250,7 +263,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'waiting': return 'bg-blue-100 text-blue-800';
+      case 'upcoming': return 'bg-blue-100 text-blue-800';
       case 'in-progress': return 'bg-yellow-100 text-yellow-800';
       case 'completed': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -447,7 +460,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                             <div>
                               <h4 className="font-medium">{consultation.patientName}</h4>
                               <p className="text-sm text-gray-600">
-                                {t.age}: {consultation.patientAge} • {consultation.time}
+                                {t.age}: {consultation.patientAge} • {consultation.gender}
                               </p>
                             </div>
                           </div>
@@ -455,14 +468,13 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                           <div className="flex items-center space-x-2">
                             <Icon className="h-5 w-5 text-blue-600" />
                             <Badge className={getStatusColor(consultation.status)}>
-                              {consultation.status === 'waiting' && t.waiting}
+                              {consultation.status === 'upcoming' && t.waiting}
                               {consultation.status === 'in-progress' && t.inProgress}
                               {consultation.status === 'completed' && t.completed}
                             </Badge>
-                            <Badge className={getUrgencyColor(consultation.urgency)}>
-                              {consultation.urgency === 'low' && t.low}
-                              {consultation.urgency === 'medium' && t.medium}
-                              {consultation.urgency === 'high' && t.high}
+                            <Badge className={getUrgencyColor("medium")}>
+                              {consultation.date.split("T")[0]} &nbsp;
+                              {consultation.time.split("T")[1].replace(":00Z", "")}
                             </Badge>
                           </div>
                         </div>
@@ -473,7 +485,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                         </div>
 
                         <div className="flex space-x-2">
-                          {consultation.status === 'waiting' && (
+                          {consultation.status === 'upcoming' && (
                             <Button size="sm" className="flex-1">
                               <Video className="h-4 w-4 mr-2" />
                               {t.startConsultation}
