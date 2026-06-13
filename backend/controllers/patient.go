@@ -10,6 +10,7 @@ import (
 	// "os/user"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"log"
 	ai "nexcare/backend/AI"
 	"time"
 )
@@ -37,8 +38,11 @@ func GetDoctorInfo(ctx *gin.Context) {
 
 func GetAppointment(ctx *gin.Context) {
 	//get the  upcoming appointment details for patients
+	query_param := ctx.Query("isAll")
+	log.Println("----->Query param isAll : ", query_param)
+	
 	userID := ctx.GetString("userID")
-	q1 := " select a.id,a.d_id,a.date,u.name,a.status,a.symptoms,a.time,a.consultation_type from users u inner join appointment a on u.id=a.d_id where u.role=$1 and p_id=$2 limit 3"
+	q1 := " select a.id,a.d_id,a.date,u.name,a.status,a.symptoms,a.time,a.consultation_type from users u inner join appointment a on u.id=a.d_id where u.role=$1 and p_id=$2 AND a.date>=CURRENT_DATE order by a.date,a.time desc limit 3 "
 	rows, err := conn.DB.Query(context.Background(), q1, "doctor", userID)
 	if err != nil {
 		ctx.IndentedJSON(500, gin.H{"Message": "Error in fetching upcoming appointment", "success": false})
@@ -94,7 +98,7 @@ func PostAppointment(ctx *gin.Context) {
 	// fmt.Println("check ck 1")
 	if err != nil {
 		fmt.Println("check ck 1")
-			
+		fmt.Println(err.Error())
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
@@ -122,9 +126,9 @@ func PostAppointment(ctx *gin.Context) {
 	}
 	//push the data in the appointment table.
 	p_id := ctx.GetString("userID")
-	q2 := `insert into appointment values($1,$2,$3,$4,$5,$6,$7,$8)`
+	q2 := `insert into appointment values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) `
 	fmt.Println("check ck 4")
-	_, err = conn.DB.Exec(context.Background(), q2, uuid.NewString(), p_id, appointmentDetails.D_id, dateObj, timeObj, appointmentDetails.Status, appointmentDetails.Type, appointmentDetails.Symptoms)
+	_, err = conn.DB.Exec(context.Background(), q2, uuid.NewString(), p_id, appointmentDetails.D_id, dateObj, timeObj, appointmentDetails.Status, appointmentDetails.Type, appointmentDetails.Symptoms, time.Now(), appointmentDetails.PaymentId)
 	if err != nil {
 		fmt.Println("check ck 5")
 		fmt.Println(err.Error())

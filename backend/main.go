@@ -34,6 +34,7 @@ func main() {
 	routes.RegisterUserRoutes(app)
 	routes.PatientRoutes(app)
 	routes.DoctorRoutes(app)
+	routes.PaymentRoutes(app)
 
 	app.Run(":8090")
 }

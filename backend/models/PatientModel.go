@@ -13,6 +13,7 @@ type Appointment struct {
     Type           string `json:"type"`
     Status         string `json:"status"`
     Symptoms       string `json:"symptoms"`
+	PaymentId      string `json:"paymentId"`
 }
 
 type BloodPressure struct {

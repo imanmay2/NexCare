@@ -45,3 +45,11 @@ func DoctorRoutes(router *gin.Engine) {
 	// doctorGroup.GET("/getAppointments",controller.GetAppointments)
 	// doctorGroup.GET("/getPatientRecords",controller.GetPatientRecords)
 }
+
+
+func PaymentRoutes(router *gin.Engine) {
+	paymentGroup := router.Group("/payment")
+	paymentGroup.Use(middleware.JWTAuthMiddleware())
+	paymentGroup.POST("/createOrder", controller.CreateOrder)
+	paymentGroup.POST("/verifyPayment", controller.VerifyPayment)
+}
