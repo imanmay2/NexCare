@@ -28,7 +28,7 @@ export default function FirstTimeProfileModal({
         try {
             setLoading(true);
             const response = await axios.patch(
-                "http://localhost:8090/patient/updatePatientProfile",
+                "https://nexcare.duckdns.org/patient/updatePatientProfile",
                 formData,
                 {
                     withCredentials: true,

@@ -174,7 +174,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   useEffect(() => {
     const fetchDoctorData = async () => {
-      const response = await axios.get("http://localhost:8090/patient/availableDoctor", { withCredentials: true })
+      const response = await axios.get("https://nexcare.duckdns.org/patient/availableDoctor", { withCredentials: true })
       const doctorData: Doctor[] = response.data.data;
       console.log("Doctor Data fetched is : ", doctorData);
       setDoctors(doctorData);
@@ -282,7 +282,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
     }
     setIsBooking(true);
 
-    let order = await axios.post("http://localhost:8090/payment/createOrder", {
+    let order = await axios.post("https://nexcare.duckdns.org/payment/createOrder", {
       amount: doctors.find((doctor)=>{
         return doctor.d_id === selectedDoctor
       })?.consultation_fee
@@ -310,7 +310,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
           console.log("PAYMENT SUCCESS");
           console.log(response);
           //call the verify payment api to verify the signature and payment details.
-          let resp =await axios.post("http://localhost:8090/payment/verifyPayment", {
+          let resp =await axios.post("https://nexcare.duckdns.org/payment/verifyPayment", {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature
@@ -343,7 +343,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
 
           console.log("--->>>New Appointment : ->>>", newAppointment); //testing the selected information.
           //hit the post request api
-          const response1 = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
+          const response1 = await axios.post("https://nexcare.duckdns.org/patient/bookAppointment", newAppointment, { withCredentials: true });
           const data = response1.data;
           console.log(data);
           if (!data.success) {
@@ -387,7 +387,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
 
     // console.log("--->>>New Appointment : ->>>", newAppointment); //testing the selected information.
     // //hit the post request api
-    // const response = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
+    // const response = await axios.post("https://nexcare.duckdns.org/patient/bookAppointment", newAppointment, { withCredentials: true });
     // const data = response.data;
     // console.log(data);
 

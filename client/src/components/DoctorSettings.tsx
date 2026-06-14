@@ -320,7 +320,7 @@ export function DoctorSettings({ user, setUser, data, setData }: DoctorSettingsP
         //Save
         if (profileForm.experience && profileForm.consultationFee && profileForm.languages.length > 0) {
             try {
-                const res = await axios.put('http://localhost:8090/doctor/updateProfileData', {
+                const res = await axios.put('https://nexcare.duckdns.org/doctor/updateProfileData', {
                     d_id: user?.id,
                     name: profileForm.name,
                     consultation_fee: profileForm.consultationFee,
@@ -392,7 +392,7 @@ export function DoctorSettings({ user, setUser, data, setData }: DoctorSettingsP
         }
 
         axios.post(
-            "http://localhost:8090/doctor/uploadProfilePic",
+            "https://nexcare.duckdns.org/doctor/uploadProfilePic",
             formData,
             {
                 withCredentials: true,
@@ -413,7 +413,7 @@ export function DoctorSettings({ user, setUser, data, setData }: DoctorSettingsP
 
     const removePhoto = async () => {
         if ((fileInputRef.current!.value != "" && fileInputRef.current!.value != null && fileInputRef.current!.value != undefined) || user?.profile_url) {
-            const res = await axios.delete("http://localhost:8090/doctor/deleteProfilePic", { withCredentials: true })
+            const res = await axios.delete("https://nexcare.duckdns.org/doctor/deleteProfilePic", { withCredentials: true })
             const data = await res.data;
 
             if (res.status === 200) {

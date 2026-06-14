@@ -86,7 +86,7 @@ export default function App() {
       document.cookie = `language=${lang}; path=/; max-age=31536000`; // Update cookie to ensure it persists
     // Check if users exists and set the USER
     axios
-      .get("http://localhost:8090/users/me", {
+      .get("https://nexcare.duckdns.org/users/me", {
         withCredentials: true,
       })
       .then(async (res) => {
@@ -98,7 +98,7 @@ export default function App() {
             // Check for doctor's on boarding..
             try {
               const res = await axios.get(
-                "http://localhost:8090/doctor/getInfo",
+                "https://nexcare.duckdns.org/doctor/getInfo",
                 { withCredentials: true }
               );
               const data_: any = await res.data;
@@ -167,7 +167,7 @@ export default function App() {
   const t = translations[language];
 
   const logout = async () => {
-    const res = await axios.post("http://localhost:8090/users/logout", {}, { withCredentials: true })
+    const res = await axios.post("https://nexcare.duckdns.org/users/logout", {}, { withCredentials: true })
     if (res.status === 200)
       setUser(null);
     else {
@@ -181,7 +181,7 @@ export default function App() {
       data.name = user?.name as string;
       console.log("Adding Doctor Profile Data:", data);
       const res = await axios.post(
-        "http://localhost:8090/doctor/addProfileData",
+        "https://nexcare.duckdns.org/doctor/addProfileData",
         data,
         { withCredentials: true }
       );

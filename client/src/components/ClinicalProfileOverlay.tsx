@@ -80,7 +80,7 @@ export const EditClinicalProfile = ({ isOpen, onClose, patientId, oldHealthRecor
 
     const updateClinicalProfile = () => {
         if (!isNew) {
-            axios.put("http://localhost:8090/doctor/updatePatientMedicalRecords", {
+            axios.put("https://nexcare.duckdns.org/doctor/updatePatientMedicalRecords", {
                 name: oldHealthRecord.name,
                 age: oldHealthRecord.age,
                 gender: oldHealthRecord.gender,
@@ -121,7 +121,7 @@ export const EditClinicalProfile = ({ isOpen, onClose, patientId, oldHealthRecor
                 }
             });
         } else
-            axios.post("http://localhost:8090/doctor/addPatientMedicalRecords", {
+            axios.post("https://nexcare.duckdns.org/doctor/addPatientMedicalRecords", {
                 name: oldHealthRecord.name,
                 age: oldHealthRecord.age,
                 gender: oldHealthRecord.gender,

@@ -41,7 +41,7 @@ export const HealthMetricsOverlay = ({ isOpen, onClose, patientId, oldHealthReco
                 gen_id: patientId
             };
 
-            const res = await axios.post(`http://localhost:8090/doctor/addVitals?gen_id=${patientId}`, vitalsData, { withCredentials: true });
+            const res = await axios.post(`https://nexcare.duckdns.org/doctor/addVitals?gen_id=${patientId}`, vitalsData, { withCredentials: true });
 
             if (res.status === 200 && res.data.success) {
                 showToast("Vitals added successfully!", true);

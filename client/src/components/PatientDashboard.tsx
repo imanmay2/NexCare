@@ -74,7 +74,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
   //Fetch the gen_id  and print the user's gen_id.
   useEffect(() => {
     let fetchUSerDetails = async () => {
-      let response = await axios.get("http://localhost:8090/users/me", {
+      let response = await axios.get("https://nexcare.duckdns.org/users/me", {
         withCredentials: true
       });
       let userData=response.data.data;
@@ -96,7 +96,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   useEffect(() => {
     let fetchappointmentData = async () => {
-      let response = await axios.get("http://localhost:8090/patient/getAppointment", {
+      let response = await axios.get("https://nexcare.duckdns.org/patient/getAppointment", {
         withCredentials: true
       });
       console.log(response.data.data);
@@ -110,7 +110,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
   useEffect(() => {
     const fetchLatestHealthMetrics = async () => {
       try {
-        const response = await axios.get("http://localhost:8090/patient/getlatesthealthmetrics", {
+        const response = await axios.get("https://nexcare.duckdns.org/patient/getlatesthealthmetrics", {
           withCredentials: true
         });
         if (response.data?.data != null) {

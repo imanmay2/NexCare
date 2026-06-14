@@ -178,7 +178,7 @@ export function SymptomChecker({ user, language, isOnline }: SymptomCheckerProps
     // };
 
     try {
-      const resp = await axios.post('http://localhost:8090/patient/symptomChecker', { symptoms }, { withCredentials: true });
+      const resp = await axios.post('https://nexcare.duckdns.org/patient/symptomChecker', { symptoms }, { withCredentials: true });
       if (resp?.data?.data) {
         let mockResult = resp.data.data;
         setResult(mockResult);

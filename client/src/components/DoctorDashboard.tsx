@@ -128,7 +128,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
   const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
-    axios.get("http://localhost:8090/doctor/getSchedule", { withCredentials: true })
+    axios.get("https://nexcare.duckdns.org/doctor/getSchedule", { withCredentials: true })
       .then((res) => {
         const data = res.data;
         if (res.status === 200) {
@@ -140,7 +140,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
         showToast("Error in fetching schedule...", false);
       })
 
-    axios.get("http://localhost:8090/doctor/getAppointments", { withCredentials: true })
+    axios.get("https://nexcare.duckdns.org/doctor/getAppointments", { withCredentials: true })
       .then((res) => {
         const data = res.data;
         if (res.status === 200) {
@@ -275,7 +275,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
     console.log(timeSlots);
 
     try {
-      const res = await axios.put("http://localhost:8090/doctor/setSchedule", {
+      const res = await axios.put("https://nexcare.duckdns.org/doctor/setSchedule", {
         d_id: user.id,
         availability: timeSlots
       }, { withCredentials: true })
@@ -296,7 +296,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
   }
 
   const searchPatientData = () => {
-    axios.get(`http://localhost:8090/doctor/getPatientMedicalRecords?p_id=${patientId}`, { withCredentials: true })
+    axios.get(`https://nexcare.duckdns.org/doctor/getPatientMedicalRecords?p_id=${patientId}`, { withCredentials: true })
       .then(async (res) => {
         const data = res.data.data;
         if (res.status === 200) {
@@ -330,7 +330,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
   const getPatientBasicInfo = async () => {
     let patientFound = false;
     try {
-      const res = await axios.get(`http://localhost:8090/patient/?gen_id=${patientId}`, { withCredentials: true })
+      const res = await axios.get(`https://nexcare.duckdns.org/patient/?gen_id=${patientId}`, { withCredentials: true })
       const data = res.data.data;
       if (res.status === 200) {
         setNewPatientRecord({ ...newPatientRecord, gender: data.gender, age: data.age, name: data.name });

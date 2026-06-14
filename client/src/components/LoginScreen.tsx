@@ -115,7 +115,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
         setIsReSendOtp(true);
       }, 5000);
       // Get OTP request
-      const response = await fetch('http://localhost:8090/users/otp', {
+      const response = await fetch('https://nexcare.duckdns.org/users/otp', {
         method: 'POST',
         credentials: "include",
         headers: {
@@ -142,7 +142,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
     // Validate OTP request
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8090/users/', {
+      const response = await fetch('https://nexcare.duckdns.org/users/', {
         method: 'POST',
         credentials: "include",
         headers: {

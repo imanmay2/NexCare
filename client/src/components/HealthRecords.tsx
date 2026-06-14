@@ -261,7 +261,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
   useEffect(() => {
     let fetchapi1 = async () => {
       try {
-        let response = await axios.get(`http://localhost:8090/patient/labResults`, {
+        let response = await axios.get(`https://nexcare.duckdns.org/patient/labResults`, {
           withCredentials: true
         });
         let data = response.data.data;
@@ -319,7 +319,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
 
     let fetchapi2 = async () => {
       try {
-        let response = await axios.get(`http://localhost:8090/patient/consultationdata`, {
+        let response = await axios.get(`https://nexcare.duckdns.org/patient/consultationdata`, {
           withCredentials: true
         });
         let data = response.data.data;
@@ -366,7 +366,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
     // Simulate API call
     let fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8090/patient/healthmetrics`, {
+        const response = await axios.get(`https://nexcare.duckdns.org/patient/healthmetrics`, {
           withCredentials: true
         });
         let data = response.data.data;
@@ -394,7 +394,7 @@ export function HealthRecords({ user, language, isOnline }: HealthRecordsProps) 
   //fetch the details for Medcial Summary.
   useEffect(() => {
     let fetchMedicalSummary = async () => {
-      let response = await axios.get(`http://localhost:8090/patient/healthsummary`, {
+      let response = await axios.get(`https://nexcare.duckdns.org/patient/healthsummary`, {
         withCredentials: true
       });
       let data = response.data.data[0];
