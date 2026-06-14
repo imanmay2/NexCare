@@ -39,7 +39,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			}
 			tokenString = access_token
 			ctx.SetSameSite(http.SameSiteNoneMode)
-			ctx.SetCookie("token", access_token, 60*15, "/", "", false, true)
+			ctx.SetCookie("token", access_token, 60*15, "/", "", true, true)
 		}
 
 		// tokenString,_=ctx.Cookie("token")
