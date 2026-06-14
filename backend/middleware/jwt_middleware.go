@@ -37,7 +37,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 				return
 			}
 			tokenString = access_token
-			ctx.SetCookie("token", access_token, 60*15, "/", "13.127.217.57", false, true)
+			ctx.SetCookie("token", access_token, 60*15, "/", "", false, true)
 		}
 
 		// tokenString,_=ctx.Cookie("token")
