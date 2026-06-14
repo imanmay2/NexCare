@@ -42,9 +42,13 @@ func DoctorRoutes(router *gin.Engine) {
 	doctorGroup.GET("/getInfo", controller.GetInfo)
 	doctorGroup.POST("/uploadProfilePic", controller.UploadProfilePic)
 	doctorGroup.DELETE("/deleteProfilePic", controller.DeleteProfilePic)
-	// doctorGroup.GET("/getAppointments",controller.GetAppointments)
-	// doctorGroup.GET("/getPatientRecords",controller.GetPatientRecords)
+	doctorGroup.GET("/getAppointments",controller.GetAppointments)
+	doctorGroup.GET("/getPatientMedicalRecords", controller.GetPatientMedicalRecords)
+	doctorGroup.POST("/addPatientMedicalRecords", controller.AddPatientMedicalRecords)
+	doctorGroup.PUT("/updatePatientMedicalRecords", controller.UpdatePatientMedicalRecords)
+    doctorGroup.POST("/addVitals", controller.AddPatientVitals)
 }
+
 
 
 func PaymentRoutes(router *gin.Engine) {

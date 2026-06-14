@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	conn "nexcare/backend/config"
-	"nexcare/backend/models"
+	model "nexcare/backend/models"
 	"nexcare/backend/util"
 	"os"
 	"path/filepath"
@@ -121,14 +122,117 @@ func UpdateProfileData(ctx *gin.Context) {
 	ctx.IndentedJSON(200, gin.H{"Message": "Doctor Info Updated Successfully", "success": true})
 }
 
-func GetAppointments() {
-	// Get the list of appointments for the doctor
+func GetAppointments(ctx *gin.Context) {
+	//get the  upcoming appointment details for doctor
+	userID := ctx.GetString("userID")
+	fmt.Println(userID)
+	q1 := "select a.id,	a.p_id, a.date, u.name, u.age, u.gender, u.profile_url, a.status, a.symptoms, a.time, a.consultation_type from users u inner join appointment a on u.id=a.p_id where a.d_id=$1  AND a.date >= CURRENT_DATE"
+	rows, err := conn.DB.Query(context.Background(), q1, userID)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": "Error in fetching upcoming appointment", "success": false})
+		return
+	}
+
+	var appointmentData []model.DoctorAppointment
+	for rows.Next() {
+		//upcoming.
+		var appointment model.DoctorAppointment
+		var profileUrl sql.NullString
+		if err := rows.Scan(&appointment.Id,
+			&appointment.P_id,
+			&appointment.Date,
+			&appointment.PatientName,
+			&appointment.Age,
+			&appointment.Gender,
+			&profileUrl,
+			&appointment.Status,
+			&appointment.Symptom,
+			&appointment.Time,
+			&appointment.Type); err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
+		if profileUrl.Valid {
+			appointment.ProfileURL = profileUrl.String
+		}
+		appointmentData = append(appointmentData, appointment)
+	}
+	ctx.IndentedJSON(200, gin.H{"Message": "Appointment Data fetched successfully", "success": true, "data": appointmentData})
 
 }
 
-func GetPatientRecords() {
+func GetPatientMedicalRecords(ctx *gin.Context) {
+	patientId := ctx.Query("p_id")
 	// Get the medical records of the selected patient
+	query := "select u.name, u.age, u.gender, u.gen_id, m.blood_type, m.allergies, m.medical_conditions, m.current_medications, m.family_history, m.surgical_history, m.menstrual_history, m.lmp, coalesce(v.bp, '{}'::jsonb) as bp, coalesce(v.temp, 0) as temp, coalesce(v.weight, 0) as weight, coalesce(v.height, 0) as height, coalesce(v.heart_rate, 0) as heart_rate, coalesce(v.spo2, 0) as spo2, coalesce(v.created_at, '1970-01-01 00:00:00+00'::timestamp) as created_at from health_summary m inner join users u on m.p_id = u.id left join health_metrics v on v.p_id = u.id where u.gen_id=$1 order by coalesce(v.created_at, '1970-01-01 00:00:00+00'::timestamp) desc limit 1"
+	row := conn.DB.QueryRow(context.Background(), query, patientId)
+	var medicalRecord model.PatientMedicalRecord
+	err := row.Scan(&medicalRecord.Name, &medicalRecord.Age, &medicalRecord.Gender, &medicalRecord.Gen_id, &medicalRecord.Blood_Type, &medicalRecord.Allergies, &medicalRecord.Medical_Conditions, &medicalRecord.Current_Medications, &medicalRecord.Family_History, &medicalRecord.Surgical_History, &medicalRecord.Menstrual_History, &medicalRecord.LMP, &medicalRecord.Bp, &medicalRecord.Temp, &medicalRecord.Weight, &medicalRecord.Height, &medicalRecord.Heart_Rate, &medicalRecord.SpO2, &medicalRecord.Created_At)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			ctx.IndentedJSON(204, gin.H{"Message": "No medical record found for the patient", "success": false})
+			return
+		}
+		fmt.Println(err)
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	ctx.IndentedJSON(200, gin.H{"data": medicalRecord, "Message": "Patient Medical Record Retrieved Successfully", "success": true})
 
+}
+
+func UpdatePatientMedicalRecords(ctx *gin.Context) {
+	// Update the medical records of the selected patient
+	var medicalRecord model.PatientMedicalRecord
+	err := ctx.ShouldBindJSON(&medicalRecord)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	query := "update health_summary set blood_type=$1,allergies=$2,medical_conditions=$3,current_medications=$4,family_history=$5,surgical_history=$6,menstrual_history=$7,lmp=$8 where p_id=(select id from users where gen_id=$9)"
+	_, err = conn.DB.Exec(context.Background(), query, medicalRecord.Blood_Type, medicalRecord.Allergies, medicalRecord.Medical_Conditions, medicalRecord.Current_Medications, medicalRecord.Family_History, medicalRecord.Surgical_History, medicalRecord.Menstrual_History, medicalRecord.LMP, medicalRecord.Gen_id)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	ctx.IndentedJSON(200, gin.H{"Message": "Patient Medical Record Updated Successfully", "success": true})
+}
+
+func AddPatientMedicalRecords(ctx *gin.Context) {
+	// Add the medical records of the selected patient
+	var medicalRecord model.PatientMedicalRecord
+	err := ctx.ShouldBindJSON(&medicalRecord)
+	if err != nil {
+		fmt.Println("Error here: ", err)
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	query := "insert into health_summary (id,p_id,blood_type,allergies,medical_conditions,current_medications,family_history,surgical_history,menstrual_history,lmp) values ($1,(select id from users where gen_id=$2),$3,$4,$5,$6,$7,$8,$9,$10)"
+	_, err = conn.DB.Exec(context.Background(), query, uuid.NewString(), medicalRecord.Gen_id, medicalRecord.Blood_Type, medicalRecord.Allergies, medicalRecord.Medical_Conditions, medicalRecord.Current_Medications, medicalRecord.Family_History, medicalRecord.Surgical_History, medicalRecord.Menstrual_History, medicalRecord.LMP)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	ctx.IndentedJSON(200, gin.H{"Message": "Patient Medical Record Added Successfully", "success": true})
+}
+
+func AddPatientVitals(ctx *gin.Context) {
+	// Add the vitals of the selected patient
+	gen_id := ctx.Query("gen_id")
+	var healthMetrics model.Health_Metrics
+	err := ctx.ShouldBindJSON(&healthMetrics)
+	if err != nil {
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	query := "insert into health_metrics (id,p_id,bp,temp,heart_rate,weight,height,spo2) values ($1,(select id from users where gen_id=$2),$3,$4,$5,$6,$7,$8)"
+	_, err = conn.DB.Exec(context.Background(), query, uuid.NewString(), gen_id, healthMetrics.Bp, healthMetrics.Temp, healthMetrics.Heart_Rate, healthMetrics.Weight, healthMetrics.Height, healthMetrics.SpO2)
+	if err != nil {
+		fmt.Println(err)
+		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	ctx.IndentedJSON(200, gin.H{"Message": "Patient Vitals Added Successfully", "success": true})
 }
 
 func UploadProfilePic(ctx *gin.Context) {

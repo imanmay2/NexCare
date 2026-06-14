@@ -12,13 +12,26 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func GetUserDetails(email_id string) (id string, name string, role string) {
+func GetUserDetails(email_id string) (id string, name string, role string, isOnboarded bool) { // want the isonboarded to be optional 
+
 	q1 := ` select id,name,role from users where email= $1 `
 	err := conn.DB.QueryRow(context.Background(), q1, email_id).Scan(&id, &name, &role)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	return id, name, role
+
+	if(role == "doctor"){
+		// check if id is present in doctors table
+		q2 := ` select d_id from doctor where d_id=$1 `
+		err = conn.DB.QueryRow(context.Background(), q2, id).Scan(&id)
+		if err == pgx.ErrNoRows {
+			log.Printf("Doctor with id %s not found in doctor table", id)
+			return id, name, role, false
+		}else{
+			return id, name, role, true
+		}
+	}
+	return id, name, role, false
 }
 
 func DeleteRefreshToken(ctx *gin.Context, refresh_token string) {

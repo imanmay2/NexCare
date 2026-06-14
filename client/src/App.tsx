@@ -217,8 +217,8 @@ export default function App() {
               onLogout={logout}
               language={language}
               isOnline={isOnline}
-              data={doctorData}
-              setData={setDoctorData}
+              doctorData={doctorData}
+              setDoctorData={setDoctorData}
             />
           );
         } else if (!user.isOnBoarded) {

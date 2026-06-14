@@ -16,6 +16,20 @@ import (
 )
 
 func GetPatientInfo(ctx *gin.Context) {
+	gen_id := ctx.Query("gen_id")
+	if gen_id != "" {
+		query := ` select name, gender, age from users where gen_id=$1 `
+		row := conn.DB.QueryRow(context.Background(), query, gen_id)
+		var name, gender string
+		var age int64
+		err := row.Scan(&name, &gender, &age)
+		if err != nil {
+			ctx.IndentedJSON(500, gin.H{"Message": "Error fetching patient info", "success": false})
+			return
+		}
+		ctx.IndentedJSON(200, gin.H{"Message": "Welcome Mr. " + name, "success": true, "data": gin.H{"name": name, "gender": gender, "age": age}})
+		return
+	}
 	ctx.IndentedJSON(200, gin.H{"Message": "Welcome Mr. ", "success": true})
 }
 
