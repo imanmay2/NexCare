@@ -57,8 +57,8 @@ func PostUser(ctx *gin.Context) {
 			return
 		}
 		//setting up the jwt token.
-		ctx.SetCookie("token", token, 60*15, "/", "13.127.217.57", false, true)
-		ctx.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "13.127.217.57", false, true)
+		ctx.SetCookie("token", token, 60*15, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
+		ctx.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
 		ctx.Set("userID", user_id)
 		ctx.Set("email", user.Email)
 		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true, "id": user_id, "role": user.Role, "name": user.Name}) //sends the jwt token to frontend
@@ -76,8 +76,8 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		}
 		log.Printf("--> Cookie Setting up...")
-		ctx.SetCookie("token", token, 60*15, "/", "13.127.217.57", false, true)     
-		ctx.SetCookie("refresh_token", refresh_token, 3600*24*7, "/",  "13.127.217.57", false, true)
+		ctx.SetCookie("token", token, 60*15, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)     
+		ctx.SetCookie("refresh_token", refresh_token, 3600*24*7, "/",  "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
 		log.Printf("<----------Cookie Set . ------>")               //setting up the token in the browser.
 
 		 //setting up the token in the browser.
@@ -149,8 +149,8 @@ func LogoutUser(ctx *gin.Context) {
 	util.DeleteRefreshToken(ctx, refreshToken)
 	log.Println("--->> Refresh Token deleted from DB")
 
-	ctx.SetCookie("token", "", -1, "/", "13.127.217.57", false, true)
-	ctx.SetCookie("refresh_token", "", -1, "/", "13.127.217.57", false, true)
+	ctx.SetCookie("token", "", -1, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
+	ctx.SetCookie("refresh_token", "", -1, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
 
 	ctx.IndentedJSON(200, gin.H{"Message": "User logged out successfully", "success": true})
 }
