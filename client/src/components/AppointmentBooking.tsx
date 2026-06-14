@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -6,11 +6,12 @@ import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  Video, 
-  Phone, 
+import { addMonths, startOfDay } from "date-fns"
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Video,
+  Phone,
   MapPin,
   User,
   Stethoscope,
@@ -20,33 +21,37 @@ import {
 } from 'lucide-react';
 import { ConsultationModal } from './ConsultationModal';
 
+import axios from "axios";
+
 interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
 interface Appointment {
   id: string;
+  d_id: string;
   doctorName: string;
   date: string;
   time: string;
   type: 'video' | 'audio' | 'in-person';
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
+  paymentId: string;
 }
 
 interface Doctor {
-  id: string;
+  d_id: string;
   name: string;
   specialty: string;
   rating: number;
-  experience: string;
-  availability: string[];
-  consultationFee: number;
-  languages: string[];
+  experience: number;
+  availability: Record<string, Array<{ id: number; start: string; end: string }>>;
+  consultation_fee: number;
+  languages: string;
 }
 
 interface AppointmentBookingProps {
@@ -58,6 +63,7 @@ interface AppointmentBookingProps {
 }
 
 export function AppointmentBooking({ user, language, isOnline, appointments, setAppointments }: AppointmentBookingProps) {
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedDoctor, setSelectedDoctor] = useState<string>('');
@@ -161,71 +167,235 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
   };
 
   const t = translations[language];
+  const today = startOfDay(new Date())
+  const twoMonthsLater = addMonths(today, 2)
 
-  const doctors: Doctor[] = [
-    {
-      id: '1',
-      name: 'Dr. Priya Sharma',
-      specialty: 'General Medicine',
-      rating: 4.8,
-      experience: '8 years',
-      availability: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
-      consultationFee: 200,
-      languages: ['English', 'Hindi', 'Punjabi']
-    },
-    {
-      id: '2', 
-      name: 'Dr. Rajesh Kumar',
-      specialty: 'Pediatrics',
-      rating: 4.7,
-      experience: '12 years',
-      availability: ['10:00', '11:00', '15:00', '16:00', '17:00'],
-      consultationFee: 250,
-      languages: ['Hindi', 'Punjabi']
-    },
-    {
-      id: '3',
-      name: 'Dr. Sunita Patel',
-      specialty: 'Gynecology',
-      rating: 4.9,
-      experience: '15 years',
-      availability: ['09:00', '11:00', '14:00', '16:00'],
-      consultationFee: 300,
-      languages: ['English', 'Hindi']
+  //TODO  : fetch the available doctor info from the backend. 
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  useEffect(() => {
+    const fetchDoctorData = async () => {
+      const response = await axios.get("http://localhost:8090/patient/availableDoctor", { withCredentials: true })
+      const doctorData: Doctor[] = response.data.data;
+      console.log("Doctor Data fetched is : ", doctorData);
+      setDoctors(doctorData);
     }
-  ];
+    fetchDoctorData()
+  }, [])
 
-  const timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
-  ];
+  //function to set the available time slots for the selected doctor and date.
+  const getAvailableTimeSlots = (availability: Record<string, Array<{ id: number, start: string; end: string }>> | undefined,
+    selectedDate: Date
+  ): string[] => {
+
+    /*
+      1. First find the day from the date. 
+      2. filter the slots for that day
+      3. divide all the time slots available into 30 mins block.
+         e.g. 9:00-11:00 ==> 9:00, 9:30, 10:00, 10:30
+    */
+
+    // Step 1: Get day name
+    const dayName = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long"
+    });
+
+    // Step 2: Get slots for that day
+    if (!availability) {
+      return [];
+    }
+    const daySlots = availability[dayName];
+    if (!daySlots || daySlots.length === 0) {
+      return [];
+    }
+    const resultSlots: string[] = [];
+    // Helper function to convert "HH:mm" -> minutes
+    const timeToMinutes = (time: string): number => {
+      const [hours, minutes] = time.split(":").map(Number);
+      return hours * 60 + minutes;
+    };
+
+    // Helper function to convert minutes -> "HH:mm"
+    const minutesToTime = (minutes: number): string => {
+      const hrs = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const hh = hrs.toString().padStart(2, "0");
+      const mm = mins.toString().padStart(2, "0");
+      return `${hh}:${mm}`;
+    };
+    // Step 3: Split each slot into 30-min blocks
+    for (const slot of daySlots) {
+      // const [startTime, endTime] = slot.split("-");
+      let startMinutes = timeToMinutes(slot.start);
+      const endMinutes = timeToMinutes(slot.end);
+      while (startMinutes < endMinutes) {
+        resultSlots.push(minutesToTime(startMinutes));
+        startMinutes += 30;
+      }
+    }
+    return resultSlots;
+  };
+
+
+
+  // const doctors: Doctor[] = [
+  //   {
+  //     id: '1',
+  //     name: 'Dr. Priya Sharma',
+  //     specialty: 'General Medicine',
+  //     rating: 4.8,
+  //     experience: 8.5,
+  //     availability: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
+  //     consultationFee: 200,
+  //     languages: ['English', 'Hindi', 'Punjabi']
+  //   },
+  //   {
+  //     id: '2',
+  //     name: 'Dr. Rajesh Kumar',
+  //     specialty: 'Pediatrics',
+  //     rating: 4.7,
+  //     experience: 12,
+  //     availability: ['10:00', '11:00', '15:00', '16:00', '17:00'],
+  //     consultationFee: 250,
+  //     languages: ['Hindi', 'Punjabi']
+  //   },
+  //   {
+  //     id: '3',
+  //     name: 'Dr. Sunita Patel',
+  //     specialty: 'Gynecology',
+  //     rating: 4.9,
+  //     experience: 15,
+  //     availability: ['09:00', '11:00', '14:00', '16:00'],
+  //     consultationFee: 300,
+  //     languages: ['English', 'Hindi']
+  //   }
+  // ];
+
+  // const timeSlots = [
+  //   '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  //   '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
+  // ];
+
 
   const handleBookAppointment = async () => {
     if (!selectedDate || !selectedTime || !selectedDoctor || !symptoms.trim()) {
       return;
     }
-
     setIsBooking(true);
 
+    let order = await axios.post("http://localhost:8090/payment/createOrder", {
+      amount: doctors.find((doctor)=>{
+        return doctor.d_id === selectedDoctor
+      })?.consultation_fee
+    }, { withCredentials: true });
+    console.log(order.data);
+
+    if (order.data.success == false) {
+      alert("Payment order creation failed. Please try again.");
+      return;
+    }
+
+    if (order.data.success == true) {
+      //if payment order is created successfully then open the razorpay payment modal.
+      // alert("Payment order created. ")
+      console.log((import.meta as any).env.VITE_RAZORPAY_KEY_ID);
+      const options = {
+        key: (import.meta as any).env.VITE_RAZORPAY_KEY_ID,
+        amount: order.data.data.amount,
+        currency: order.data.data.currency,
+        name: "NexCare",
+        description: "Doctor Consultation",
+        order_id: order.data.data.id,
+        handler:async function (response: any) {
+          // alert("Payment successful!");
+          console.log("PAYMENT SUCCESS");
+          console.log(response);
+          //call the verify payment api to verify the signature and payment details.
+          let resp =await axios.post("http://localhost:8090/payment/verifyPayment", {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature
+          }, { withCredentials: true })
+
+          if (!resp.data.success) {
+            alert("Payment Failed. Please try again.");
+            return;
+          }
+
+
+          //call the book appointment api to save the appointment details in the database.
+          const doctor = doctors.find(d => d.d_id === selectedDoctor);
+          const formattedDate =
+            `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")
+            }-${String(selectedDate.getDate()).padStart(2, "0")
+            }`;
+
+          const newAppointment: Appointment = {
+            id: Date.now().toString(),
+            d_id: doctor?.d_id || '',
+            doctorName: doctor?.name || 'Unknown Doctor',
+            date: formattedDate,
+            time: selectedTime,
+            type: consultationType,
+            status: 'upcoming',
+            symptoms: symptoms,
+            paymentId: resp.data.payment_id
+          };
+
+          console.log("--->>>New Appointment : ->>>", newAppointment); //testing the selected information.
+          //hit the post request api
+          const response1 = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
+          const data = response1.data;
+          console.log(data);
+          if (!data.success) {
+            alert("Failed to book appointment. Please contact support.");
+            return;
+          }
+          // setAppointments(prev => [...prev, newAppointment]); instead save in database. 
+          setShowBookingForm(false);
+          setSelectedTime('');
+          setSymptoms('');
+          setIsBooking(false);
+        }
+      };
+
+      //open the razorpay payment modal UI.
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+      // return;
+    }
+
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // await new Promise(resolve => setTimeout(resolve, 2000));
+    //uncomment
+    // const doctor = doctors.find(d => d.d_id === selectedDoctor);
+    // const formattedDate =
+    //   `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")
+    //   }-${String(selectedDate.getDate()).padStart(2, "0")
+    //   }`;
 
-    const doctor = doctors.find(d => d.id === selectedDoctor);
-    const newAppointment: Appointment = {
-      id: Date.now().toString(),
-      doctorName: doctor?.name || 'Unknown Doctor',
-      date: selectedDate.toISOString().split('T')[0],
-      time: selectedTime,
-      type: consultationType,
-      status: 'upcoming',
-      symptoms: symptoms
-    };
+    // const newAppointment: Appointment = {
+    //   id: Date.now().toString(),
+    //   d_id: doctor?.d_id || '',
+    //   doctorName: doctor?.name || 'Unknown Doctor',
+    //   date: formattedDate,
+    //   time: selectedTime,
+    //   type: consultationType,
+    //   status: 'upcoming',
+    //   symptoms: symptoms
+    // };
 
-    setAppointments(prev => [...prev, newAppointment]);
-    setShowBookingForm(false);
-    setSelectedTime('');
-    setSymptoms('');
-    setIsBooking(false);
+    // console.log("--->>>New Appointment : ->>>", newAppointment); //testing the selected information.
+    // //hit the post request api
+    // const response = await axios.post("http://localhost:8090/patient/bookAppointment", newAppointment, { withCredentials: true });
+    // const data = response.data;
+    // console.log(data);
+
+    // // setAppointments(prev => [...prev, newAppointment]); instead save in database. 
+    // setShowBookingForm(false);
+    // setSelectedTime('');
+    // setSymptoms('');
+    // setIsBooking(false);
   };
 
   const getAppointmentIcon = (type: string) => {
@@ -254,6 +424,9 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
     setConsultationModal({ isOpen: true, appointment });
   };
 
+
+
+
   if (showBookingForm) {
     return (
       <div className="space-y-6">
@@ -278,13 +451,12 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
               <div className="space-y-4">
                 {doctors.map((doctor) => (
                   <div
-                    key={doctor.id}
-                    onClick={() => setSelectedDoctor(doctor.id)}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedDoctor === doctor.id 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    key={doctor.d_id}
+                    onClick={() => setSelectedDoctor(doctor.d_id)}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedDoctor === doctor.d_id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
@@ -298,17 +470,17 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                               ⭐ {doctor.rating}
                             </span>
-                            <span className="text-xs text-gray-500">{doctor.experience}</span>
+                            <span className="text-xs text-gray-500">{doctor.experience} years</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-semibold">₹{doctor.consultationFee}</div>
+                        <div className="text-lg font-semibold">₹{doctor.consultation_fee}</div>
                         <div className="text-xs text-gray-500">{t.fee}</div>
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-gray-600">
-                      {t.languages}: {doctor.languages.join(', ')}
+                      {t.languages}: {doctor.languages}
                     </div>
                   </div>
                 ))}
@@ -327,7 +499,8 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  disabled={(date) => date < new Date()}
+                  fromDate={today}
+                  toDate={twoMonthsLater}
                   className="rounded-md border"
                 />
               </CardContent>
@@ -340,23 +513,21 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-2">
-                    {timeSlots.map((time) => {
-                      const doctor = doctors.find(d => d.id === selectedDoctor);
-                      const isAvailable = doctor?.availability.includes(time);
-                      
-                      return (
+                    {(() => {
+                      const doctor = doctors.find(d => d.d_id === selectedDoctor);
+                      const timeSlots = getAvailableTimeSlots(doctor?.availability, selectedDate);
+                      return timeSlots.map((time) => (
                         <Button
                           key={time}
                           variant={selectedTime === time ? "default" : "outline"}
                           size="sm"
                           onClick={() => setSelectedTime(time)}
-                          disabled={!isAvailable}
                           className="w-full"
                         >
                           {time}
                         </Button>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
                 </CardContent>
               </Card>
@@ -373,17 +544,16 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-3">
-                  {(['video', 'audio', 'in-person'] as const).map((type) => {
+                  {(['video', 'audio', 'inPerson'] as const).map((type) => {
                     const Icon = getAppointmentIcon(type);
                     return (
                       <button
                         key={type}
-                        onClick={() => setConsultationType(type)}
-                        className={`p-4 border rounded-lg text-left transition-colors ${
-                          consultationType === type 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        onClick={() => setConsultationType(type === 'inPerson' ? 'in-person' : type)}
+                        className={`p-4 border rounded-lg text-left transition-colors ${consultationType === type
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <div className="flex items-center space-x-3">
                           <Icon className="h-5 w-5 text-blue-600" />
@@ -392,7 +562,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                             <div className="text-xs text-gray-500">
                               {type === 'video' && 'High quality video consultation'}
                               {type === 'audio' && 'Audio-only call (low bandwidth)'}
-                              {type === 'in-person' && 'Visit Nabha Civil Hospital'}
+                              {type === 'inPerson' && 'Visit Nabha Civil Hospital'}
                             </div>
                           </div>
                         </div>
@@ -414,7 +584,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                   placeholder="Describe your symptoms, medical history, and reason for consultation..."
                   className="min-h-32"
                 />
-                
+
                 <Button
                   onClick={handleBookAppointment}
                   disabled={!symptoms.trim() || isBooking}
@@ -467,7 +637,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
       {/* Upcoming Appointments */}
       <Card>
         <CardHeader>
-          <CardTitle>{t.upcoming}</CardTitle>
+          <CardTitle>Appointments</CardTitle>
         </CardHeader>
         <CardContent>
           {appointments.filter(apt => apt.status === 'upcoming').length > 0 ? (
@@ -485,7 +655,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                             {appointment.date} at {appointment.time}
                           </p>
                           <Badge className={getAppointmentTypeColor(appointment.type)}>
-                            {t[appointment.type]}
+                            {t[appointment.type === 'in-person' ? 'inPerson' : appointment.type]}
                           </Badge>
                         </div>
                       </div>
@@ -527,7 +697,7 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
                         <div>
                           <h4 className="font-medium">{appointment.doctorName}</h4>
                           <p className="text-sm text-gray-600">
-                            {appointment.date} at {appointment.time}
+                            {appointment.date.toString()} at {appointment.time.toString()}
                           </p>
                           <Badge variant="secondary">Completed</Badge>
                         </div>

@@ -6,10 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Building2, 
-  Package, 
-  ShoppingCart, 
+import {
+  Building2,
+  Package,
+  ShoppingCart,
   TrendingUp,
   Search,
   Plus,
@@ -26,7 +26,7 @@ interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
@@ -301,16 +301,16 @@ export function PharmacyDashboard({ user, onLogout, language, isOnline }: Pharma
                 <h1 className="text-xl font-semibold text-gray-900">
                   {t.welcome}, {user.name}
                 </h1>
-                <p className="text-sm text-gray-600">Main Market, Nabha • {user.phone}</p>
+                <p className="text-sm text-gray-600">Main Market, Nabha • {user.email}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="text-right text-sm">
                 <div className="text-gray-600">Today: Dec 17, 2024</div>
                 <div className="text-gray-500">12 orders processed</div>
               </div>
-              
+
               <Button variant="outline" size="sm" onClick={onLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -339,7 +339,7 @@ export function PharmacyDashboard({ user, onLogout, language, isOnline }: Pharma
               <div className="text-sm text-gray-600">{t.totalMedicines}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6 text-center">
               <AlertTriangle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
@@ -349,7 +349,7 @@ export function PharmacyDashboard({ user, onLogout, language, isOnline }: Pharma
               <div className="text-sm text-gray-600">{t.lowStock}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6 text-center">
               <Clock className="h-8 w-8 text-purple-600 mx-auto mb-2" />
@@ -359,7 +359,7 @@ export function PharmacyDashboard({ user, onLogout, language, isOnline }: Pharma
               <div className="text-sm text-gray-600">{t.pendingOrders}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6 text-center">
               <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
@@ -412,7 +412,7 @@ export function PharmacyDashboard({ user, onLogout, language, isOnline }: Pharma
                             Batch: {medicine.batchNumber} • Exp: {medicine.expiryDate} • {medicine.manufacturer}
                           </p>
                         </div>
-                        
+
                         <div className="text-right">
                           <div className="text-lg font-semibold">₹{medicine.price}</div>
                           <div className="text-sm text-gray-600">{t.stock}: {medicine.stock}</div>
@@ -470,7 +470,7 @@ export function PharmacyDashboard({ user, onLogout, language, isOnline }: Pharma
                             {new Date(order.orderDate).toLocaleString()}
                           </p>
                         </div>
-                        
+
                         <div className="text-right">
                           <div className="text-lg font-semibold">₹{order.total}</div>
                           <Badge className={getOrderStatusColor(order.status)}>
@@ -503,21 +503,21 @@ export function PharmacyDashboard({ user, onLogout, language, isOnline }: Pharma
                             {t.confirm}
                           </Button>
                         )}
-                        
+
                         {order.status === 'confirmed' && (
                           <Button size="sm" className="flex-1">
                             <Package className="h-4 w-4 mr-2" />
                             {t.prepare}
                           </Button>
                         )}
-                        
+
                         {order.status === 'ready' && (
                           <Button size="sm" className="flex-1">
                             <Truck className="h-4 w-4 mr-2" />
                             {t.markDelivered}
                           </Button>
                         )}
-                        
+
                         <Button variant="outline" size="sm" className="flex-1">
                           {t.view}
                         </Button>

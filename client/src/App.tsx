@@ -4,6 +4,7 @@ import { DoctorDashboard } from "./components/DoctorDashboard";
 import { PharmacyDashboard } from "./components/PharmacyDashboard";
 import { LoginScreen } from "./components/LoginScreen";
 import { Button } from "./components/ui/button";
+import { LoadingOverlay } from "./components/ui/LoadingScreenOverlay";
 import {
   Tabs,
   TabsContent,
@@ -31,23 +32,93 @@ import {
   Phone,
   MessageSquare,
 } from "lucide-react";
+import { DoctorOnboarding } from "./components/DoctorProfileSetup";
+import { useError } from "./components/ui/Toast";
+import axios from "axios";
 
 interface User {
   id: string;
   name: string;
   role: "patient" | "doctor" | "pharmacy";
-  phone: string;
+  email: string;
   language: "en" | "hi" | "pa";
+  isOnBoarded?: boolean;
+  profile_url?: string
+}
+
+interface DoctorProfileData {
+  d_id: string;
+  name: string;
+  domain: string;
+  experience: number;
+  consultation_fee: number;
+  languages: string;
+  hospital: string;
 }
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const { showToast } = useError();
+  const [user, setUser] = useState<User | null>();
   const [language, setLanguage] = useState<"en" | "hi" | "pa">(
     "en",
   );
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [doctorData, setDoctorData] = useState<DoctorProfileData>({
+    d_id: "",
+    name: "",
+    domain: "",
+    experience: 0,
+    consultation_fee: 0,
+    languages: "",
+    hospital: ""
+  });
 
   useEffect(() => {
+    setIsLoading(true);
+    const langCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("language="));
+    const lang = langCookie ? langCookie.split("=")[1] : "en";
+    setLanguage(lang as "en" | "hi" | "pa");
+    if (!langCookie)
+      document.cookie = `language=${lang}; path=/; max-age=31536000`; // Update cookie to ensure it persists
+    // Check if users exists and set the USER
+    axios
+      .get("http://localhost:8090/users/me", {
+        withCredentials: true,
+      })
+      .then(async (res) => {
+        if (res.status === 200) {
+          //get the language preference from the cookie and set it in the state
+          let userData = res.data.data;
+          userData.language = lang as "en" | "hi" | "pa";
+          if (userData.role === "doctor") {
+            // Check for doctor's on boarding..
+            try {
+              const res = await axios.get(
+                "http://localhost:8090/doctor/getInfo",
+                { withCredentials: true }
+              );
+              const data_: any = await res.data;
+              if (res.status === 200) {
+                setUser({ ...userData, isOnBoarded: data_.isOnBoarded });
+                setDoctorData(data_.data);
+              } else {
+                showToast(data_.Message, data_.success);
+              }
+            } catch (err) {
+              showToast("Error in Fetching Onboarding Status", false);
+            }
+          } else
+            setUser(userData);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching user data:", err);
+      })
+      .finally(() => setIsLoading(false));
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -62,7 +133,7 @@ export default function App() {
 
   const translations = {
     en: {
-      title: "Nabha Telemedicine Platform",
+      title: "NexCare Telemedicine Platform",
       subtitle:
         "Connecting rural communities to quality healthcare",
       loginPrompt: "Welcome to Healthcare Access",
@@ -95,31 +166,83 @@ export default function App() {
 
   const t = translations[language];
 
+  const logout = async () => {
+    const res = await axios.post("http://localhost:8090/users/logout", {}, { withCredentials: true })
+    if (res.status === 200)
+      setUser(null);
+    else {
+      showToast("Error in Logging out... PLease Try again", false);
+    };
+  }
+
+  const addProfileData = async (data: DoctorProfileData) => {
+    try {
+      data.d_id = user?.id as string;
+      data.name = user?.name as string;
+      console.log("Adding Doctor Profile Data:", data);
+      const res = await axios.post(
+        "http://localhost:8090/doctor/addProfileData",
+        data,
+        { withCredentials: true }
+      );
+      const data_: any = await res.data;
+      if (res.status === 200) {
+        showToast(data_.Message, true);
+      } else {
+        showToast(data_.Message, false);
+      }
+    } catch (err) {
+      showToast("Error in Adding Doctor Profile Data", false);
+    }
+  };
+
   if (user) {
     switch (user.role) {
       case "patient":
         return (
           <PatientDashboard
             user={user}
-            onLogout={() => setUser(null)}
+            onLogout={logout}
             language={language}
             isOnline={isOnline}
           />
         );
       case "doctor":
-        return (
-          <DoctorDashboard
-            user={user}
-            onLogout={() => setUser(null)}
-            language={language}
-            isOnline={isOnline}
-          />
-        );
+        console.log(user.isOnBoarded)
+        if (user.isOnBoarded) {
+          return (
+            <DoctorDashboard
+              user={user}
+              setUser={setUser}
+              onLogout={logout}
+              language={language}
+              isOnline={isOnline}
+              doctorData={doctorData}
+              setDoctorData={setDoctorData}
+            />
+          );
+        } else if (!user.isOnBoarded) {
+          return (
+            <DoctorOnboarding
+              onComplete={(data) => {
+                data.languages = data.languages.join(",");
+                data.consultation_fee = data.fee;
+                addProfileData(data);
+                setDoctorData(data);
+                setUser({ ...user, isOnBoarded: true });
+              }}
+              onLogout={logout}
+              language={language}
+              isOnline={isOnline}
+              setLanguage={setLanguage}
+            />
+          );
+        }
       case "pharmacy":
         return (
           <PharmacyDashboard
             user={user}
-            onLogout={() => setUser(null)}
+            onLogout={logout}
             language={language}
             isOnline={isOnline}
           />
@@ -130,6 +253,8 @@ export default function App() {
             onLogin={setUser}
             language={language}
             setLanguage={setLanguage}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
           />
         );
     }
@@ -137,6 +262,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      {isLoading && <LoadingOverlay />}
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -183,7 +309,10 @@ export default function App() {
                           : "outline"
                       }
                       size="sm"
-                      onClick={() => setLanguage(lang)}
+                      onClick={() => {
+                        document.cookie = `language=${lang}; path=/; max-age=31536000`;
+                        setLanguage(lang);
+                      }}
                       className="px-3 py-1"
                     >
                       {languageLabels[lang]}
@@ -203,7 +332,7 @@ export default function App() {
             <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full mb-4">
               <Heart className="h-5 w-5" />
               <span className="font-medium">
-                Nabha Telemedicine Platform
+                NexCare Telemedicine Platform
               </span>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -220,6 +349,8 @@ export default function App() {
                 onLogin={setUser}
                 language={language}
                 setLanguage={setLanguage}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
               />
             </CardContent>
           </Card>
@@ -442,7 +573,7 @@ export default function App() {
             <div className="flex items-center justify-center space-x-2 mb-4">
               <Heart className="h-6 w-6 text-red-500" />
               <span className="text-lg font-semibold">
-                Nabha Telemedicine Platform
+                NexCare Telemedicine Platform
               </span>
             </div>
             <p className="text-gray-400 mb-4">

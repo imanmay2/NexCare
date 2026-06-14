@@ -6,13 +6,14 @@ import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Calendar, 
-  Video, 
-  FileText, 
-  MapPin, 
-  Clock, 
-  Phone, 
+import PatientProfileSetup from './PatientProfileSetup';
+import {
+  Calendar,
+  Video,
+  FileText,
+  MapPin,
+  Clock,
+  Phone,
   Heart,
   AlertCircle,
   CheckCircle,
@@ -30,13 +31,18 @@ import { AppointmentBooking } from './AppointmentBooking';
 import { HealthRecords } from './HealthRecords';
 import { PharmacyLocator } from './PharmacyLocator';
 import { ConsultationModal } from './ConsultationModal';
-
+import axios from 'axios';
 interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
+  gen_id: "PX-001MC26";
+  profileURL?: string;
   language: 'en' | 'hi' | 'pa';
+  age?: number;
+  gender?:string;
+  phn_no?: string;
 }
 
 interface PatientDashboardProps {
@@ -52,7 +58,7 @@ interface Appointment {
   date: string;
   time: string;
   type: 'video' | 'audio' | 'in-person';
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
 }
 
@@ -64,33 +70,64 @@ interface HealthMetric {
 }
 
 export function PatientDashboard({ user, onLogout, language, isOnline }: PatientDashboardProps) {
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: '1',
-      doctorName: 'Dr. Priya Sharma',
-      date: '2024-12-18',
-      time: '14:30',
-      type: 'video',
-      status: 'upcoming',
-      symptoms: 'Fever, body ache'
-    },
-    {
-      id: '2',
-      doctorName: 'Dr. Rajesh Kumar',
-      date: '2024-12-15',
-      time: '10:00',
-      type: 'audio',
-      status: 'completed',
-      symptoms: 'Headache'
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  //Fetch the gen_id  and print the user's gen_id.
+  useEffect(() => {
+    let fetchUSerDetails = async () => {
+      let response = await axios.get("http://localhost:8090/users/me", {
+        withCredentials: true
+      });
+      let userData=response.data.data;
+      if (userData != null) {
+        user.gen_id = userData.gen_id;
+      }
+       if (
+        userData.age===null ||
+        userData.gender===null ||
+        userData.phn_no===null
+      ) {
+        setShowProfileModal(true);
+      }
     }
-  ]);
+    fetchUSerDetails();
+  }, []);
 
-  const [healthMetrics] = useState<HealthMetric[]>([
-    { type: 'Blood Pressure', value: '120/80', date: '2024-12-15', status: 'normal' },
-    { type: 'Temperature', value: '99.2°F', date: '2024-12-17', status: 'attention' },
-    { type: 'Heart Rate', value: '78 bpm', date: '2024-12-17', status: 'normal' }
-  ]);
-
+  //use the useEffect for the fetching the data from the backend and set the state for the appointments.
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  useEffect(() => {
+    let fetchappointmentData = async () => {
+      let response = await axios.get("http://localhost:8090/patient/getAppointment", {
+        withCredentials: true
+      });
+      console.log(response.data.data);
+      if (response.data.data != null) {
+        setAppointments(response.data.data);
+      }
+    }
+    fetchappointmentData();
+  }, [])
+  const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>([]);
+  useEffect(() => {
+    const fetchLatestHealthMetrics = async () => {
+      try {
+        const response = await axios.get("http://localhost:8090/patient/getlatesthealthmetrics", {
+          withCredentials: true
+        });
+        if (response.data?.data != null) {
+          let data:any=response.data.data;
+          let metrics:HealthMetric[] = [
+            { type: 'Blood Pressure', value: data.bp.sys+"/"+data.bp.dia, date: data.created_at.split("T")[0], status: 'normal' },
+            { type: 'Temperature', value: data.temp+"°F", date: data.created_at.split("T")[0], status: 'attention' },
+            { type: 'Heart Rate', value: data.heart_rate+' bpm', date:data.created_at.split("T")[0], status: 'normal' }
+          ]
+          setHealthMetrics(metrics);
+        }
+      } catch (error) {
+        console.error('Failed to fetch latest health metrics', error);
+      }
+    };
+    fetchLatestHealthMetrics();
+  }, []);
   const [lastSync, setLastSync] = useState<Date>(new Date());
   const [consultationModal, setConsultationModal] = useState<{
     isOpen: boolean;
@@ -201,8 +238,17 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gray-50">
+       <PatientProfileSetup
+
+      open={showProfileModal}
+
+      onClose={() => setShowProfileModal(false)}
+
+    />
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -215,10 +261,12 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
               </Avatar>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{t.welcome}, {user.name}</h1>
-                <p className="text-sm text-gray-600">{user.phone}</p>
+                <p className="text-sm text-gray-600">{user.email}</p>
+                <p className="text-sm text-gray-600">ID : {user.gen_id}</p>
+
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {/* Connection Status */}
               <div className="flex items-center space-x-2">
@@ -232,7 +280,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
                   <div>{t.lastSync}: {lastSync.toLocaleTimeString()}</div>
                 </div>
               </div>
-              
+
               <Button variant="outline" size="sm" onClick={onLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -265,8 +313,8 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
           <TabsContent value="overview" className="space-y-6">
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" 
-                    onClick={handleNewConsultation}>
+              <Card className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={handleNewConsultation}>
                 <CardContent className="p-6 text-center">
                   <Video className="h-8 w-8 text-blue-600 mx-auto mb-3" />
                   <h3 className="font-semibold mb-2">{t.newConsultation}</h3>
@@ -283,7 +331,7 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
               </Card>
 
               <Card className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => document.querySelector('[value="symptoms"]')?.click()}>
+                onClick={() => (document.querySelector('[value="symptoms"]') as HTMLElement)?.click()}>
                 <CardContent className="p-6 text-center">
                   <Activity className="h-8 w-8 text-green-600 mx-auto mb-3" />
                   <h3 className="font-semibold mb-2">{t.symptoms}</h3>
@@ -358,9 +406,9 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
           </TabsContent>
 
           <TabsContent value="appointments">
-            <AppointmentBooking 
-              user={user} 
-              language={language} 
+            <AppointmentBooking
+              user={user}
+              language={language}
               isOnline={isOnline}
               appointments={appointments}
               setAppointments={setAppointments}

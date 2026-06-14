@@ -5,12 +5,12 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Video, 
-  VideoOff, 
-  Mic, 
-  MicOff, 
-  Phone, 
+import {
+  Video,
+  VideoOff,
+  Mic,
+  MicOff,
+  Phone,
   PhoneOff,
   MessageSquare,
   Clock,
@@ -27,17 +27,18 @@ interface User {
   id: string;
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
-  phone: string;
+  email: string;
   language: 'en' | 'hi' | 'pa';
 }
 
 interface Appointment {
   id: string;
+  d_id:string;
   doctorName: string;
-  date: string;
-  time: string;
+  date: String;
+  time: String;
   type: 'video' | 'audio' | 'in-person';
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
 }
 
@@ -74,7 +75,7 @@ export function ConsultationModal({ isOpen, onClose, appointment, user, language
       doctorJoined: "Doctor has joined the consultation",
       consultationEnded: "Consultation ended",
       excellent: "Excellent",
-      good: "Good", 
+      good: "Good",
       poor: "Poor",
       minutes: "minutes",
       chat: "Chat",
@@ -127,7 +128,7 @@ export function ConsultationModal({ isOpen, onClose, appointment, user, language
   const t = translations[language];
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (isConnected) {
       interval = setInterval(() => {
         setDuration(prev => prev + 1);
@@ -311,8 +312,8 @@ export function ConsultationModal({ isOpen, onClose, appointment, user, language
                   </div>
                 </div>
                 <div className="mt-3 flex">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Type a message..."
                     className="flex-1 text-sm p-2 border rounded-l"
                   />
@@ -359,8 +360,8 @@ export function ConsultationModal({ isOpen, onClose, appointment, user, language
             {t.settings}
           </Button>
 
-          <Button 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             size="sm"
             onClick={handleEndConsultation}
           >
