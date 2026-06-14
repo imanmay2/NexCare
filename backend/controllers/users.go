@@ -31,15 +31,15 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(500, gin.H{"Message": "Couldn't generate JWT Token", "success": false})
 			return
 		}
-		
+
 		// if db is not empty
-		general_id:=util.Generate_General_Id(ctx,user.Name,user.Role)
-		if(general_id=="NULL"){
+		general_id := util.Generate_General_Id(ctx, user.Name, user.Role)
+		if general_id == "NULL" {
 			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in generating General Id", "success": false})
 			return
 		}
 		query := "insert into users(id,name,role,email,gen_id) values($1,$2,$3,$4,$5)"
-		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email,general_id)
+		_, err = conn.DB.Exec(context.Background(), query, user_id, user.Name, user.Role, user.Email, general_id)
 		if err != nil {
 			ctx.IndentedJSON(400, gin.H{"Message": err.Error(), "success": false})
 			return
@@ -57,8 +57,8 @@ func PostUser(ctx *gin.Context) {
 			return
 		}
 		//setting up the jwt token.
-		ctx.SetCookie("token", token, 60*15, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
-		ctx.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
+		ctx.SetCookie("token", token, 60*15, "/", "", false, true)
+		ctx.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true)
 		ctx.Set("userID", user_id)
 		ctx.Set("email", user.Email)
 		ctx.IndentedJSON(200, gin.H{"Message": "Account Created Successfully", "success": true, "id": user_id, "role": user.Role, "name": user.Name}) //sends the jwt token to frontend
@@ -76,11 +76,11 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		}
 		log.Printf("--> Cookie Setting up...")
-		ctx.SetCookie("token", token, 60*15, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)     
-		ctx.SetCookie("refresh_token", refresh_token, 3600*24*7, "/",  "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
-		log.Printf("<----------Cookie Set . ------>")               //setting up the token in the browser.
+		ctx.SetCookie("token", token, 60*15, "/", "", false, true)
+		ctx.SetCookie("refresh_token", refresh_token, 3600*24*7, "/", "", false, true)
+		log.Printf("<----------Cookie Set . ------>") //setting up the token in the browser.
 
-		 //setting up the token in the browser.
+		//setting up the token in the browser.
 
 		ctx.Set("userID", id)
 		ctx.Set("email", user.Email)
@@ -149,8 +149,8 @@ func LogoutUser(ctx *gin.Context) {
 	util.DeleteRefreshToken(ctx, refreshToken)
 	log.Println("--->> Refresh Token deleted from DB")
 
-	ctx.SetCookie("token", "", -1, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
-	ctx.SetCookie("refresh_token", "", -1, "/", "ec2-13-127-217-57.ap-south-1.compute.amazonaws.com", false, true)
+	ctx.SetCookie("token", "", -1, "/", "", false, true)
+	ctx.SetCookie("refresh_token", "", -1, "/", "", false, true)
 
 	ctx.IndentedJSON(200, gin.H{"Message": "User logged out successfully", "success": true})
 }
@@ -174,7 +174,7 @@ func Me(ctx *gin.Context) {
 	query := "select id,name,email,role,profile_url,gen_id,age,gender,phn_no from users where id=$1"
 	row := conn.DB.QueryRow(context.Background(), query, userID)
 	var user model.User
-	err_ := row.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.ProfileURL,&user.Gen_id,&user.Age,&user.Gender,&user.Phn_no)
+	err_ := row.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.ProfileURL, &user.Gen_id, &user.Age, &user.Gender, &user.Phn_no)
 	if err_ != nil {
 		fmt.Println(err_)
 		ctx.IndentedJSON(500, gin.H{"Message": err_.Error(), "success": false})
