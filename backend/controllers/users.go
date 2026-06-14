@@ -158,6 +158,7 @@ func LogoutUser(ctx *gin.Context) {
 func Me(ctx *gin.Context) {
 	//fetch the user details using the userID from the token and send it to the frontend.
 	refreshToken, err1 := ctx.Cookie("refresh_token")
+	log.Printf("--->> Refresh Token from cookie : %s", refreshToken)
 	if err1 != nil {
 		ctx.IndentedJSON(500, gin.H{"Message": "Refresh Token not found in cookie", "success": false})
 		return
@@ -166,6 +167,7 @@ func Me(ctx *gin.Context) {
 	ctx.Set("userID", userID)
 	ctx.Set("email", email)
 	if err != nil {
+		log.Printf("Error in verifying JWT Token : %s", err.Error())
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
