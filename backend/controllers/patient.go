@@ -312,7 +312,7 @@ func GetLatestHealthMetrics(ctx *gin.Context) {
 	}
 	var latestMetrics model.Health_Metrics
 	for row.Next() {
-		err := row.Scan(&latestMetrics.Id, &latestMetrics.Bp, &latestMetrics.Temp, &latestMetrics.Heart_Rate, &latestMetrics.Weight, &latestMetrics.Height, &latestMetrics.Spo2, &latestMetrics.Created_At)
+		err := row.Scan(&latestMetrics.Id, &latestMetrics.Bp, &latestMetrics.Temp, &latestMetrics.Heart_Rate, &latestMetrics.Weight, &latestMetrics.Height, &latestMetrics.SpO2, &latestMetrics.Created_At)
 		if err != nil {
 			fmt.Println("Error in scanning latest health metrics : ", err.Error())
 			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": "Error in fetching latest health metrics", "success": false})
