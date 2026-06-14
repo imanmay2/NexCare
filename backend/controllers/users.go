@@ -57,7 +57,9 @@ func PostUser(ctx *gin.Context) {
 			return
 		}
 		//setting up the jwt token.
+		ctx.SetSameSite(http.SameSiteNoneMode)
 		ctx.SetCookie("token", token, 60*15, "/", "", false, true)
+		ctx.SetSameSite(http.SameSiteNoneMode)
 		ctx.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true)
 		ctx.Set("userID", user_id)
 		ctx.Set("email", user.Email)
@@ -76,7 +78,9 @@ func PostUser(ctx *gin.Context) {
 			ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})
 		}
 		log.Printf("--> Cookie Setting up...")
+		ctx.SetSameSite(http.SameSiteNoneMode)
 		ctx.SetCookie("token", token, 60*15, "/", "", false, true)
+		ctx.SetSameSite(http.SameSiteNoneMode)
 		ctx.SetCookie("refresh_token", refresh_token, 3600*24*7, "/", "", false, true)
 		log.Printf("<----------Cookie Set . ------>") //setting up the token in the browser.
 
@@ -149,7 +153,9 @@ func LogoutUser(ctx *gin.Context) {
 	util.DeleteRefreshToken(ctx, refreshToken)
 	log.Println("--->> Refresh Token deleted from DB")
 
+	ctx.SetSameSite(http.SameSiteNoneMode)
 	ctx.SetCookie("token", "", -1, "/", "", false, true)
+	ctx.SetSameSite(http.SameSiteNoneMode)
 	ctx.SetCookie("refresh_token", "", -1, "/", "", false, true)
 
 	ctx.IndentedJSON(200, gin.H{"Message": "User logged out successfully", "success": true})

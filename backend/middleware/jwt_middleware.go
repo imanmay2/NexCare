@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"nexcare/backend/util"
 
 	"github.com/gin-gonic/gin"
@@ -37,6 +38,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 				return
 			}
 			tokenString = access_token
+			ctx.SetSameSite(http.SameSiteNoneMode)
 			ctx.SetCookie("token", access_token, 60*15, "/", "", false, true)
 		}
 
