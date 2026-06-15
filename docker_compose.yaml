@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nexcare_backend
+    ports:
+      - "8090:8090"
+    env_file:
+      - ./.env
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: nexcare_frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+    restart: unless-stopped
