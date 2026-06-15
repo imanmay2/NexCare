@@ -14,7 +14,7 @@
 
 <br/>
 
-### 🌐 [**Live Demo**](https://nexcare.live) &nbsp;|&nbsp; 💻 [**Source Code**](https://github.com/imanmay2/NexCare) &nbsp;|&nbsp; 📧 [**Get in Touch**](mailto:imanmay2@gmail.com)
+### 🌐 [**Live Demo**](https://nexcare-telemedicine.netlify.app) &nbsp;|&nbsp; 💻 [**Source Code**](https://github.com/imanmay2/NexCare) &nbsp;|&nbsp; 📧 [**Get in Touch**](mailto:imanmay2@gmail.com)
 
 </div>
 
@@ -395,9 +395,10 @@ NexCare is built by a small, focused team combining **engineering depth** with *
   <a href="https://github.com/imanmay2">GitHub</a> · <a href="https://linkedin.com/in/imanmay2">LinkedIn</a>
 </td>
 <td align="center" width="50%">
-  <img src="https://github.com/identicons/soumadeep.png" width="100" style="border-radius:50%"/><br/>
-  <b>Soumadeep</b> (MBBS)<br/>
-  🩺 Medical Insights & Product Direction
+  <img src="https://github.com/SoumadeepChoudhury.png" width="100" style="border-radius:50%"/><br/>
+  <b>Soumadeep Choudhury</b> (MBBS)<br/>
+  🩺 Medical Insights & Product Direction<br/>
+  <a href="https://github.com/SoumadeepChoudhury">GitHub</a>
 </td>
 </tr>
 </table>
