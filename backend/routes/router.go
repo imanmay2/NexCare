@@ -53,3 +53,8 @@ func PaymentRoutes(router *gin.Engine) {
 	paymentGroup.POST("/createOrder", controller.CreateOrder)
 	paymentGroup.POST("/verifyPayment", controller.VerifyPayment)
 }
+
+func WebSocketsRoutes(router *gin.Engine){
+	socketGroup:=router.Group("/ws")
+	socketGroup.GET("/connect",controller.WebSocketHandler)
+}
