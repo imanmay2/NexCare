@@ -13,8 +13,13 @@ interface User {
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
   email: string;
+  gen_id: "PX-001MC26";
+  profileURL?: string;
   language: 'en' | 'hi' | 'pa';
-  isOnBoarded?: boolean;
+  age?: number;
+  gender?: string;
+  phn_no?: string;
+  isOnBoarded?: Boolean
 }
 
 interface LoginScreenProps {
@@ -167,6 +172,7 @@ export function LoginScreen({ onLogin, language, setLanguage, isLoading, setIsLo
           id: responseData.id,
           name: responseData.name,
           role: responseData.role,
+          gen_id: "PX-001MC26",
           email: email,
           language: language,
           isOnBoarded: responseData.isOnboarded

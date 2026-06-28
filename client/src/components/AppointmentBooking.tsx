@@ -421,7 +421,8 @@ export function AppointmentBooking({ user, language, isOnline, appointments, set
       alert('Internet connection required for video/audio consultations');
       return;
     }
-    setConsultationModal({ isOpen: true, appointment });
+    const consultationUrl = `/consultation/${appointment.id}`;
+    window.open(consultationUrl, '_blank', 'noopener,noreferrer');
   };
 
 
