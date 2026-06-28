@@ -15,7 +15,6 @@ import (
 func GetUserDetails(email_id string) (id string, name string, role string, isOnboarded bool) { // want the isonboarded to be optional 
 
 	q1 := ` select id,name,role from users where email= $1 `
-
 	err := conn.DB.QueryRow(context.Background(), q1, email_id).Scan(&id, &name, &role)
 	if err != nil {
 		log.Fatal(err.Error())

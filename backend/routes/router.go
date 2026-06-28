@@ -1,10 +1,9 @@
 package routes
 
 import (
-	controller "nexcare/backend/controllers"
-	"nexcare/backend/middleware"
-
 	"github.com/gin-gonic/gin"
+	"nexcare/backend/middleware"
+	controller "nexcare/backend/controllers"
 )
 
 func RegisterUserRoutes(router *gin.Engine) {
@@ -22,11 +21,15 @@ func PatientRoutes(router *gin.Engine) {
 	patientGroup.GET("/availableDoctor", controller.GetDoctorInfo)
 	patientGroup.GET("/getAppointment", controller.GetAppointment)
 	// patientGroup.GET("/getPastAppointment",controller.GetPastAppointment)
+	patientGroup.GET("/getAllAppointmentDetails", controller.GetAllAppointmentDetails)
 	patientGroup.POST("/bookAppointment", controller.PostAppointment)
+	patientGroup.GET("/getlatesthealthmetrics", controller.GetLatestHealthMetrics)
 	patientGroup.GET("/healthmetrics", controller.GetHealthMetrics)
 	patientGroup.GET("/healthsummary", controller.GetHealthSummary)
-	patientGroup.GET("/consultationdata", controller.GetConsultationData)
-	patientGroup.GET("/labResults", controller.GetLabResults) // in progress
+	patientGroup.GET("/consultationdata", controller.GetConsultationData) //precription  +  consultation.
+	patientGroup.GET("/labResults", controller.GetLabResults)             //Lab results.
+	patientGroup.POST("/symptomChecker", controller.SymptomChecker)
+	patientGroup.PATCH("/updatePatientProfile", controller.UpdatePatientData)
 }
 
 func DoctorRoutes(router *gin.Engine) {
@@ -44,4 +47,19 @@ func DoctorRoutes(router *gin.Engine) {
 	doctorGroup.POST("/addPatientMedicalRecords", controller.AddPatientMedicalRecords)
 	doctorGroup.PUT("/updatePatientMedicalRecords", controller.UpdatePatientMedicalRecords)
     doctorGroup.POST("/addVitals", controller.AddPatientVitals)
+}
+
+
+
+func PaymentRoutes(router *gin.Engine) {
+	paymentGroup := router.Group("/payment")
+	paymentGroup.Use(middleware.JWTAuthMiddleware())
+	paymentGroup.POST("/createOrder", controller.CreateOrder)
+	paymentGroup.POST("/verifyPayment", controller.VerifyPayment)
+}
+
+func WebSocketsRoutes(router *gin.Engine){
+	socketGroup:=router.Group("/ws")
+	// socketGroup.Use(middleware.JWTAuthMiddleware())
+	socketGroup.GET("/connect",controller.WebSocketHandler)
 }
