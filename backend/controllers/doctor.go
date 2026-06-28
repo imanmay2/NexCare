@@ -226,7 +226,7 @@ func AddPatientVitals(ctx *gin.Context) {
 		return
 	}
 	query := "insert into health_metrics (id,p_id,bp,temp,heart_rate,weight,height,spo2) values ($1,(select id from users where gen_id=$2),$3,$4,$5,$6,$7,$8)"
-	_, err = conn.DB.Exec(context.Background(), query, uuid.NewString(), gen_id, healthMetrics.Bp, healthMetrics.Temp, healthMetrics.Heart_Rate, healthMetrics.Weight, healthMetrics.Height, healthMetrics.SpO2)
+	_, err = conn.DB.Exec(context.Background(), query, uuid.NewString(), gen_id, healthMetrics.Bp, healthMetrics.Temp, healthMetrics.Heart_Rate, healthMetrics.Weight, healthMetrics.Height, healthMetrics.Spo2)
 	if err != nil {
 		fmt.Println(err)
 		ctx.IndentedJSON(500, gin.H{"Message": err.Error(), "success": false})

@@ -47,7 +47,13 @@ interface User {
   name: string;
   role: 'patient' | 'doctor' | 'pharmacy';
   email: string;
+  gen_id: "PX-001MC26";
+  profileURL?: string;
   language: 'en' | 'hi' | 'pa';
+  age?: number;
+  gender?: string;
+  phn_no?: string;
+  isOnBoarded?: Boolean
 }
 
 interface DoctorDashboardProps {
@@ -143,6 +149,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
     axios.get("http://localhost:8090/doctor/getAppointments", { withCredentials: true })
       .then((res) => {
         const data = res.data;
+        console.log("RESPONSE---> ", data)
         if (res.status === 200) {
           console.log(data.data);
           setConsultations(data.data);
@@ -242,6 +249,15 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
   };
 
   const t = translations[language];
+
+  const handleJoinConsultation = (appointment: Consultation) => {
+    if (!isOnline && appointment.type !== 'in-person') {
+      alert('Internet connection required for video/audio consultations');
+      return;
+    }
+    const consultationUrl = `/consultation/${appointment.id}`;
+    window.open(consultationUrl, '_blank', 'noopener,noreferrer');
+  };
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
@@ -371,7 +387,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                   day: 'numeric',
                   year: 'numeric'
                 })}</div>
-                <div className="text-gray-500">{consultations.length} consultations scheduled</div>
+                <div className="text-gray-500">{consultations != null ? consultations.length : 0} consultations scheduled</div>
               </div>
 
               <Button variant="outline" size="sm" onClick={onLogout}>
@@ -406,7 +422,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
           <Card>
             <CardContent className="p-6 text-center">
               <Clock className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{consultations.length}</div>
+              <div className="text-2xl font-bold text-gray-900">{consultations != null ? consultations.length : 0}</div>
               <div className="text-sm text-gray-600">{t.pendingConsults}</div>
             </CardContent>
           </Card>
@@ -414,7 +430,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
           <Card>
             <CardContent className="p-6 text-center">
               <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{consultations.filter(c => c.status === 'completed').length}</div>
+              <div className="text-2xl font-bold text-gray-900">{consultations != null ? consultations.filter(c => c.status === 'completed').length : 0}</div>
               <div className="text-sm text-gray-600">{t.completedToday}</div>
             </CardContent>
           </Card>
@@ -446,7 +462,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {consultations.map((consultation) => {
+                  {consultations != null ? consultations.map((consultation) => {
                     const Icon = getConsultationIcon(consultation.type);
                     return (
                       <div key={consultation.id} className="border rounded-lg p-4">
@@ -486,7 +502,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
 
                         <div className="flex space-x-2">
                           {consultation.status === 'upcoming' && (
-                            <Button size="sm" className="flex-1">
+                          <Button size="sm" className="flex-1" onClick={()=>handleJoinConsultation(consultation)}>
                               <Video className="h-4 w-4 mr-2" />
                               {t.startConsultation}
                             </Button>
@@ -504,7 +520,7 @@ export function DoctorDashboard({ user, setUser, onLogout, language, isOnline, d
                         </div>
                       </div>
                     );
-                  })}
+                  }) : 0}
                 </div>
               </CardContent>
             </Card>

@@ -35,15 +35,20 @@ import {
 import { DoctorOnboarding } from "./components/DoctorProfileSetup";
 import { useError } from "./components/ui/Toast";
 import axios from "axios";
+import ConsultationRoom from "./components/ConsultationRoom";
 
 interface User {
   id: string;
   name: string;
-  role: "patient" | "doctor" | "pharmacy";
+  role: 'patient' | 'doctor' | 'pharmacy';
   email: string;
-  language: "en" | "hi" | "pa";
-  isOnBoarded?: boolean;
-  profile_url?: string
+  gen_id: "PX-001MC26";
+  profileURL?: string;
+  language: 'en' | 'hi' | 'pa';
+  age?: number;
+  gender?: string;
+  phn_no?: string;
+  isOnBoarded?: Boolean
 }
 
 interface DoctorProfileData {
@@ -197,6 +202,19 @@ export default function App() {
   };
 
   if (user) {
+    if (window.location.pathname.startsWith("/consultation/")) {
+      // Extract the appointment ID from the end of the URL path
+      const appointmentId = window.location.pathname.split("/").pop() || "";
+
+      return (
+        <ConsultationRoom
+          appointmentId={appointmentId}
+          userRole={user.role === "doctor" ? "doctor" : "patient"}
+          userName={user.name}
+        />
+      );
+    }
+
     switch (user.role) {
       case "patient":
         return (

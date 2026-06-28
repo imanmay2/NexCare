@@ -41,7 +41,7 @@ interface User {
   profileURL?: string;
   language: 'en' | 'hi' | 'pa';
   age?: number;
-  gender?:string;
+  gender?: string;
   phn_no?: string;
 }
 
@@ -54,12 +54,14 @@ interface PatientDashboardProps {
 
 interface Appointment {
   id: string;
+  d_id: string;
   doctorName: string;
   date: string;
   time: string;
   type: 'video' | 'audio' | 'in-person';
   status: 'upcoming' | 'completed' | 'cancelled' | 'missed';
   symptoms: string;
+  paymentId: string;
 }
 
 interface HealthMetric {
@@ -77,14 +79,14 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
       let response = await axios.get("http://localhost:8090/users/me", {
         withCredentials: true
       });
-      let userData=response.data.data;
+      let userData = response.data.data;
       if (userData != null) {
         user.gen_id = userData.gen_id;
       }
-       if (
-        userData.age===null ||
-        userData.gender===null ||
-        userData.phn_no===null
+      if (
+        userData.age === null ||
+        userData.gender === null ||
+        userData.phn_no === null
       ) {
         setShowProfileModal(true);
       }
@@ -114,11 +116,11 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
           withCredentials: true
         });
         if (response.data?.data != null) {
-          let data:any=response.data.data;
-          let metrics:HealthMetric[] = [
-            { type: 'Blood Pressure', value: data.bp.sys+"/"+data.bp.dia, date: data.created_at.split("T")[0], status: 'normal' },
-            { type: 'Temperature', value: data.temp+"°F", date: data.created_at.split("T")[0], status: 'attention' },
-            { type: 'Heart Rate', value: data.heart_rate+' bpm', date:data.created_at.split("T")[0], status: 'normal' }
+          let data: any = response.data.data;
+          let metrics: HealthMetric[] = [
+            { type: 'Blood Pressure', value: data.bp.sys + "/" + data.bp.dia, date: data.created_at.split("T")[0], status: 'normal' },
+            { type: 'Temperature', value: data.temp + "°F", date: data.created_at.split("T")[0], status: 'attention' },
+            { type: 'Heart Rate', value: data.heart_rate + ' bpm', date: data.created_at.split("T")[0], status: 'normal' }
           ]
           setHealthMetrics(metrics);
         }
@@ -220,7 +222,8 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
       alert('Internet connection required for video/audio consultations');
       return;
     }
-    setConsultationModal({ isOpen: true, appointment });
+    const consultationUrl = `/consultation/${appointment.id}`;
+    window.open(consultationUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleEmergencyCall = () => {
@@ -241,13 +244,13 @@ export function PatientDashboard({ user, onLogout, language, isOnline }: Patient
 
   return (
     <div className="min-h-screen bg-gray-50">
-       <PatientProfileSetup
+      <PatientProfileSetup
 
-      open={showProfileModal}
+        open={showProfileModal}
 
-      onClose={() => setShowProfileModal(false)}
+        onClose={() => setShowProfileModal(false)}
 
-    />
+      />
 
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
