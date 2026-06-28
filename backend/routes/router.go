@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	controller "nexcare/backend/controllers"
 	"nexcare/backend/middleware"
+	controller "nexcare/backend/controllers"
 )
 
 func RegisterUserRoutes(router *gin.Engine) {
@@ -56,4 +56,10 @@ func PaymentRoutes(router *gin.Engine) {
 	paymentGroup.Use(middleware.JWTAuthMiddleware())
 	paymentGroup.POST("/createOrder", controller.CreateOrder)
 	paymentGroup.POST("/verifyPayment", controller.VerifyPayment)
+}
+
+func WebSocketsRoutes(router *gin.Engine){
+	socketGroup:=router.Group("/ws")
+	// socketGroup.Use(middleware.JWTAuthMiddleware())
+	socketGroup.GET("/connect",controller.WebSocketHandler)
 }
