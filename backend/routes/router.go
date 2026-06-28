@@ -56,5 +56,6 @@ func PaymentRoutes(router *gin.Engine) {
 
 func WebSocketsRoutes(router *gin.Engine){
 	socketGroup:=router.Group("/ws")
+	// socketGroup.Use(middleware.JWTAuthMiddleware())
 	socketGroup.GET("/connect",controller.WebSocketHandler)
 }

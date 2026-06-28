@@ -16,10 +16,9 @@ type Client struct {
 type JoinMsg struct {
 	Appointment_id string ` json:"a_id" binding:"required" `
 	Role           string ` json:"role" binding:"required" `
-	User_id        string ` json:"user_id" binding:"required" `
 }
 
-// struct for sending for all the clientts in the room including the user.
+// struct for sending for all the clients in the room including the user.
 type OutgoingMsg struct {
 	Sender_id string `json:"sender_id" binding:"required"`
 	Role      string `json:"role" binding:"required"`
@@ -27,6 +26,6 @@ type OutgoingMsg struct {
 }
 
 // fetch the msg from frontend
-type IncomingChat struct {
+type IncomingMsg struct {
 	Msg string `json:"msg" binding:"required"`
 }
