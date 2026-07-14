@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -21,6 +21,7 @@ import {
   Truck,
   DollarSign
 } from 'lucide-react';
+import axios from 'axios';
 
 interface User {
   id: string;
@@ -64,74 +65,8 @@ interface Order {
 
 export function PharmacyDashboard({ user, onLogout, language, isOnline }: PharmacyDashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [medicines] = useState<Medicine[]>([
-    {
-      id: '1',
-      name: 'Paracetamol 500mg',
-      genericName: 'Acetaminophen',
-      category: 'Pain Relief',
-      stock: 150,
-      minStock: 50,
-      price: 15,
-      expiryDate: '2025-12-31',
-      batchNumber: 'PCM001',
-      manufacturer: 'Cipla',
-      status: 'in-stock'
-    },
-    {
-      id: '2',
-      name: 'Amoxicillin 250mg',
-      genericName: 'Amoxicillin',
-      category: 'Antibiotic',
-      stock: 25,
-      minStock: 30,
-      price: 45,
-      expiryDate: '2025-06-30',
-      batchNumber: 'AMX002',
-      manufacturer: 'Sun Pharma',
-      status: 'low-stock'
-    },
-    {
-      id: '3',
-      name: 'Omeprazole 20mg',
-      genericName: 'Omeprazole',
-      category: 'Gastric',
-      stock: 0,
-      minStock: 20,
-      price: 35,
-      expiryDate: '2025-03-31',
-      batchNumber: 'OMP003',
-      manufacturer: 'Dr. Reddy\'s',
-      status: 'out-of-stock'
-    }
-  ]);
-
-  const [orders] = useState<Order[]>([
-    {
-      id: '1',
-      customerName: 'Amar Singh',
-      customerPhone: '+91-98765-43210',
-      items: [
-        { medicine: 'Paracetamol 500mg', quantity: 2, price: 30 },
-        { medicine: 'Cough Syrup', quantity: 1, price: 85 }
-      ],
-      total: 115,
-      status: 'pending',
-      orderDate: '2024-12-17T14:30:00',
-      deliveryAddress: 'Village Ghanaur, Nabha'
-    },
-    {
-      id: '2',
-      customerName: 'Simran Kaur',
-      customerPhone: '+91-98765-43211',
-      items: [
-        { medicine: 'Vitamin D3', quantity: 1, price: 120 }
-      ],
-      total: 120,
-      status: 'ready',
-      orderDate: '2024-12-17T13:15:00'
-    }
-  ]);
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   const translations = {
     en: {
@@ -245,6 +180,40 @@ export function PharmacyDashboard({ user, onLogout, language, isOnline }: Pharma
   };
 
   const t = translations[language];
+
+  useEffect(() => {
+    fetchMedicines();
+  }, []);
+
+  const fetchMedicines = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:8090/pharmacy/getMedicines", { withCredentials: true }
+      );
+
+      const data = response.data.medicines;
+
+      const formattedMedicines: Medicine[] = data.map((medicine: any) => ({
+        id: medicine.id,
+        name: medicine.name,
+        genericName: medicine.generic_name,
+        category: medicine.category,
+        manufacturer: medicine.manufacturer,
+        stock: 0,
+        minStock: 10,
+        price: 0,
+        expiryDate: "",
+        batchNumber: "",
+        status: "out-of-stock"
+      }));
+
+      setMedicines(formattedMedicines);
+      console.log("Fetched medicines:", formattedMedicines);
+
+    } catch (error) {
+      console.error("Failed to fetch medicines:", error);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

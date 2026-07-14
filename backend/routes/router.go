@@ -1,9 +1,10 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
-	"nexcare/backend/middleware"
 	controller "nexcare/backend/controllers"
+	"nexcare/backend/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterUserRoutes(router *gin.Engine) {
@@ -42,14 +43,12 @@ func DoctorRoutes(router *gin.Engine) {
 	doctorGroup.GET("/getInfo", controller.GetInfo)
 	doctorGroup.POST("/uploadProfilePic", controller.UploadProfilePic)
 	doctorGroup.DELETE("/deleteProfilePic", controller.DeleteProfilePic)
-	doctorGroup.GET("/getAppointments",controller.GetAppointments)
+	doctorGroup.GET("/getAppointments", controller.GetAppointments)
 	doctorGroup.GET("/getPatientMedicalRecords", controller.GetPatientMedicalRecords)
 	doctorGroup.POST("/addPatientMedicalRecords", controller.AddPatientMedicalRecords)
 	doctorGroup.PUT("/updatePatientMedicalRecords", controller.UpdatePatientMedicalRecords)
-    doctorGroup.POST("/addVitals", controller.AddPatientVitals)
+	doctorGroup.POST("/addVitals", controller.AddPatientVitals)
 }
-
-
 
 func PaymentRoutes(router *gin.Engine) {
 	paymentGroup := router.Group("/payment")
@@ -58,8 +57,14 @@ func PaymentRoutes(router *gin.Engine) {
 	paymentGroup.POST("/verifyPayment", controller.VerifyPayment)
 }
 
-func WebSocketsRoutes(router *gin.Engine){
-	socketGroup:=router.Group("/ws")
+func WebSocketsRoutes(router *gin.Engine) {
+	socketGroup := router.Group("/ws")
 	// socketGroup.Use(middleware.JWTAuthMiddleware())
-	socketGroup.GET("/connect",controller.WebSocketHandler)
+	socketGroup.GET("/connect", controller.WebSocketHandler)
+}
+
+func PharmacyRoutes(router *gin.Engine) {
+	pharmacyGroup := router.Group("/pharmacy")
+	pharmacyGroup.Use(middleware.JWTAuthMiddleware())
+	pharmacyGroup.GET("/getMedicines", controller.GetMedicines)
 }

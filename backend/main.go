@@ -36,6 +36,7 @@ func main() {
 	routes.DoctorRoutes(app)
 	routes.PaymentRoutes(app)
 	routes.WebSocketsRoutes(app)
+	routes.PharmacyRoutes(app)
 
 	app.Run(":8090")
 }
