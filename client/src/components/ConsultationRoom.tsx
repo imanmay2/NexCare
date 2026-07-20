@@ -33,8 +33,7 @@ interface ChatMessage extends OutgoingMsg {
 }
 
 // ─── WebSocket URL ──────────────────────────────────────────────────────────
-// Auth via URL query params: /ws?a_id=...&role=...&user_id=...
-const WS_BASE_URL = 'ws://localhost:8080/ws';
+const WS_BASE_URL = 'ws://localhost:8090/ws/connect';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -149,21 +148,30 @@ export default function ConsultationRoom({
             role: userRole,
             user_id: userId,
         });
-        const url = `${WS_BASE_URL}?${params.toString()}`;
+        // const url = `${WS_BASE_URL}?${params.toString()}`;
 
         try {
-            const ws = new WebSocket(url);
+            const ws = new WebSocket(WS_BASE_URL);
             wsRef.current = ws;
 
             ws.onopen = () => {
                 setWsConnected(true);
+
+
+                //send the joinMsg to server so that user can join into the room in backend.
+                const joinMsg={
+                    "a_id":appointmentId,
+                    "role":userRole,
+                }
+
+                ws.send(JSON.stringify(joinMsg)) // join into room.
                 if (reconnectTimerRef.current) {
                     clearTimeout(reconnectTimerRef.current);
                     reconnectTimerRef.current = null;
                 }
             };
 
-            // Parse OutgoingMsg from server
+            // Parse OutgoingMsg from server--->meaning receives/listen from backend 
             ws.onmessage = (event: MessageEvent) => {
                 try {
                     const data: OutgoingMsg = JSON.parse(event.data);
@@ -173,6 +181,7 @@ export default function ConsultationRoom({
                         timestamp: new Date(),
                         isSelf: data.sender_id === userId,
                     };
+                    console.log("Sender ID:", data.sender_id, "User ID:", userId, "Is Self:", newMsg.isSelf);
                     setMessages(prev => [...prev, newMsg]);
                 } catch {
                     console.error('Failed to parse message:', event.data);
@@ -200,35 +209,36 @@ export default function ConsultationRoom({
         };
     }, [connectWS]);
 
-    const injectDummyReply = useCallback((sentText: string) => {
-        const dummy: ChatMessage = {
-            sender_id: 'dummy-bot',
-            role: userRole === 'doctor' ? 'patient' : 'doctor',
-            msg: `[Demo] Got your message: "${sentText}"`,
-            id: `${Date.now()}-dummy`,
-            timestamp: new Date(),
-            isSelf: false,
-        };
-        setTimeout(() => {
-            setMessages(prev => [...prev, dummy]);
-        }, 600);
-    }, [userRole]);
+    // const injectDummyReply = useCallback((sentText: string) => {
+    //     const dummy: ChatMessage = {
+    //         sender_id: 'dummy-bot',
+    //         role: userRole === 'doctor' ? 'patient' : 'doctor',
+    //         msg: `[Demo] Got your message: "${sentText}"`,
+    //         id: `${Date.now()}-dummy`,
+    //         timestamp: new Date(),
+    //         isSelf: false,
+    //     };
+    //     setTimeout(() => {
+    //         setMessages(prev => [...prev, dummy]);
+    //     }, 600);
+    // }, [userRole]);
 
     // Send IncomingMsg to server
     const sendMessage = useCallback(() => {
+        console.log("@@@@@@@@sendMessage called with inputValue:", inputValue);
         const text = inputValue.trim();
         if (!text) return;
 
         // Optimistically add own message regardless of WS state
-        const selfMsg: ChatMessage = {
-            sender_id: userId,
-            role: userRole,
-            msg: text,
-            id: `${Date.now()}-self`,
-            timestamp: new Date(),
-            isSelf: true,
-        };
-        setMessages(prev => [...prev, selfMsg]);
+        // const selfMsg: ChatMessage = {
+        //     sender_id: userId,
+        //     role: userRole,
+        //     msg: text,
+        //     id: `${Date.now()}-self`,
+        //     timestamp: new Date(),
+        //     isSelf: true,
+        // };
+        // setMessages(prev => [...prev, selfMsg]);
         setInputValue('');
         inputRef.current?.focus();
 
@@ -237,9 +247,9 @@ export default function ConsultationRoom({
             wsRef.current.send(JSON.stringify(payload));
         } else {
             // WS offline — inject a dummy reply for testing
-            injectDummyReply(text);
+            // injectDummyReply(text);
         }
-    }, [inputValue, userId, userRole, injectDummyReply]);
+    }, [inputValue, userId, userRole]); // commented injectDummy Reply
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {

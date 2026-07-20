@@ -211,6 +211,7 @@ export default function App() {
           appointmentId={appointmentId}
           userRole={user.role === "doctor" ? "doctor" : "patient"}
           userName={user.name}
+          userId={user.id}
         />
       );
     }
