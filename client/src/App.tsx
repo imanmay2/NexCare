@@ -36,6 +36,7 @@ import { DoctorOnboarding } from "./components/DoctorProfileSetup";
 import { useError } from "./components/ui/Toast";
 import axios from "axios";
 import ConsultationRoom from "./components/ConsultationRoom";
+import { PharmacyOnboarding } from "./components/PharmacyOnboarding";
 
 interface User {
   id: string;
@@ -211,6 +212,7 @@ export default function App() {
           appointmentId={appointmentId}
           userRole={user.role === "doctor" ? "doctor" : "patient"}
           userName={user.name}
+          userId={user.id}
         />
       );
     }
@@ -258,11 +260,17 @@ export default function App() {
         }
       case "pharmacy":
         return (
-          <PharmacyDashboard
-            user={user}
+          <PharmacyOnboarding
+            // user={user}
             onLogout={logout}
             language={language}
             isOnline={isOnline}
+            setLanguage={setLanguage}
+            onComplete={(data) => {
+              // Handle pharmacy onboarding completion
+              console.log("Pharmacy Onboarding Complete:", data);
+              // You can set the user state or perform any other actions here
+            }}
           />
         );
       default:
