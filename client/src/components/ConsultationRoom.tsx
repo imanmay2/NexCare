@@ -267,6 +267,26 @@ export default function ConsultationRoom({
 
     const isDoctor = userRole === 'doctor';
 
+    //video call feature
+    const localVideoRef = useRef<HTMLVideoElement | null>(null);
+    useEffect(() => {
+        const startCamera = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: isVideoOff ? false : true,
+                    audio: true,
+                });
+
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = stream;
+                }
+            } catch (error) {
+                console.error("Error accessing camera/microphone:", error);
+            }
+        };
+        startCamera();
+    }, [isVideoOff]);
+
     return (
         <>
             <style>{`
@@ -442,6 +462,20 @@ export default function ConsultationRoom({
                                     }}>
                                         <VideoOff size={20} color="#475569" />
                                     </div>
+                                )}
+                                {!isVideoOff && (
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: '#020617', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                    <video
+                                        ref={localVideoRef}
+                                        autoPlay
+                                        playsInline
+                                        muted
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    /></div>
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                     {isMuted && <MicOff size={12} color="#f87171" />}
