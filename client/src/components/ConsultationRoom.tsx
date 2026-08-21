@@ -159,9 +159,9 @@ export default function ConsultationRoom({
 
 
                 //send the joinMsg to server so that user can join into the room in backend.
-                const joinMsg={
-                    "a_id":appointmentId,
-                    "role":userRole,
+                const joinMsg = {
+                    "a_id": appointmentId,
+                    "role": userRole,
                 }
 
                 ws.send(JSON.stringify(joinMsg)) // join into room.
@@ -267,24 +267,110 @@ export default function ConsultationRoom({
 
     const isDoctor = userRole === 'doctor';
 
+
+
     //video call feature
     const localVideoRef = useRef<HTMLVideoElement | null>(null);
+    const localStreamRef = useRef<MediaStream | null>(null);
+   
+
     useEffect(() => {
         const startCamera = async () => {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: isVideoOff ? false : true,
-                    audio: true,
-                });
+                const stream =
+                    await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true,
+                    });
+
+                localStreamRef.current = stream;
 
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
                 }
             } catch (error) {
-                console.error("Error accessing camera/microphone:", error);
+                console.error(
+                    "Error accessing camera/microphone:",
+                    error
+                );
             }
         };
+
         startCamera();
+
+        // Cleanup when component is destroyed
+        return () => {
+            const stream = localStreamRef.current;
+
+            if (stream) {
+                stream.getTracks().forEach((track) => {
+                    track.stop();
+                });
+            }
+        };
+    }, []);
+
+    const turnCameraOff = () => {
+        const stream = localStreamRef.current;
+        if (!stream) return;
+        const videoTrack = stream.getVideoTracks()[0];
+        if (!videoTrack) return;
+        videoTrack.stop();
+
+        if (localVideoRef.current) {
+            localVideoRef.current.srcObject = null;
+        }
+
+        setIsVideoOff(true);
+    };
+
+    const turnCameraOn = async () => {
+        try {
+            const newStream =
+                await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true,
+                });
+
+            // const currentStream = localStreamRef.current;
+            // if (!currentStream) {
+            //     return;
+            // }
+
+            // const newVideoTrack = newStream.getVideoTracks()[0];
+            // currentStream.addTrack(newVideoTrack);
+            // if (localVideoRef.current) {
+            //     localVideoRef.current.srcObject = newStream;
+            //     await localVideoRef.current.play();
+            // }
+
+
+            //Store the stream in the ref so that it can be used later
+            localStreamRef.current = newStream;
+
+            setIsVideoOff(false); //video off false
+        } catch (error) {
+            console.error(
+                "Unable to access camera:",
+                error
+            );
+        }
+    };
+
+
+    // Attaching stream AFTER <video> is mounted
+    useEffect(() => {
+        if (isVideoOff) return;
+        const video = localVideoRef.current;
+        const stream = localStreamRef.current;
+        if (!video || !stream) return;
+        video.srcObject = stream;
+        video.play().catch((error) => {
+            console.error(
+                "Video playback failed:",
+                error
+            );
+        });
     }, [isVideoOff]);
 
     return (
@@ -469,13 +555,13 @@ export default function ConsultationRoom({
                                         background: '#020617', display: 'flex',
                                         alignItems: 'center', justifyContent: 'center',
                                     }}>
-                                    <video
-                                        ref={localVideoRef}
-                                        autoPlay
-                                        playsInline
-                                        muted
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    /></div>
+                                        <video
+                                            ref={localVideoRef}
+                                            autoPlay
+                                            playsInline
+                                            muted
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        /></div>
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                     {isMuted && <MicOff size={12} color="#f87171" />}
@@ -529,7 +615,7 @@ export default function ConsultationRoom({
 
                                 <ControlBtn
                                     active={isVideoOff} danger
-                                    onClick={() => setIsVideoOff(p => !p)}
+                                    onClick={isVideoOff ? turnCameraOn : turnCameraOff}
                                     label={isVideoOff ? 'Enable video' : 'Disable video'}
                                 >
                                     {isVideoOff
