@@ -268,45 +268,62 @@ export default function ConsultationRoom({
     const isDoctor = userRole === 'doctor';
 
 
-
-    //video call feature
+    //------video call feature
     const localVideoRef = useRef<HTMLVideoElement | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
-   
+    const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+
 
     useEffect(() => {
-        const startCamera = async () => {
+        const initWebRTC = async () => {
             try {
-                const stream =
-                    await navigator.mediaDevices.getUserMedia({
-                        video: true,
-                        audio: true,
-                    });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                })
 
+                //store the stream.
                 localStreamRef.current = stream;
 
+                //show the local video.
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
                 }
+
+                //cretae the webRTC peer connection
+                const peerConnection = new RTCPeerConnection();
+                peerConnectionRef.current = peerConnection;
+
+                //add the medias vid +audi
+                stream.getTracks().forEach((track) => {
+                    peerConnection.addTrack(track, stream);
+                });
+
+                console.log("---->RTC PeerConnection created.");
+                console.log("RTC Senders", peerConnection.getSenders());
+
             } catch (error) {
-                console.error(
-                    "Error accessing camera/microphone:",
-                    error
-                );
+                console.log("Error occured", error);
             }
-        };
+        }
 
-        startCamera();
+        initWebRTC();
 
-        // Cleanup when component is destroyed
         return () => {
-            const stream = localStreamRef.current;
+            const stream =
+                localStreamRef.current;
 
             if (stream) {
                 stream.getTracks().forEach((track) => {
                     track.stop();
                 });
             }
+            const peerConnection =
+                peerConnectionRef.current;
+            if (peerConnection) {
+                peerConnection.close();
+            }
+
         };
     }, []);
 
