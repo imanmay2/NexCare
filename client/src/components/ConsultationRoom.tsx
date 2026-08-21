@@ -390,6 +390,22 @@ export default function ConsultationRoom({
         });
     }, [isVideoOff]);
 
+    
+    //mute and unmute microphone feature.
+    const toggleMic=async()=>{
+        const stream=localStreamRef.current;
+        if(!stream){
+            return;
+        }
+
+        const audioTrack=stream.getAudioTracks()[0];
+        if(!audioTrack){
+            return;
+        }
+
+        audioTrack.enabled=!audioTrack.enabled;
+        setIsMuted(!audioTrack.enabled);
+    }
     return (
         <>
             <style>{`
@@ -621,7 +637,7 @@ export default function ConsultationRoom({
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <ControlBtn
                                     active={isMuted} danger
-                                    onClick={() => setIsMuted(p => !p)}
+                                    onClick={toggleMic}
                                     label={isMuted ? 'Unmute' : 'Mute'}
                                 >
                                     {isMuted
