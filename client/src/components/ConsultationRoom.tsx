@@ -172,19 +172,68 @@ export default function ConsultationRoom({
             };
 
             // Parse OutgoingMsg from server--->meaning receives/listen from backend 
-            ws.onmessage = (event: MessageEvent) => {
-                try {
-                    const data: OutgoingMsg = JSON.parse(event.data);
-                    const newMsg: ChatMessage = {
-                        ...data,
-                        id: `${Date.now()}-${Math.random()}`,
-                        timestamp: new Date(),
-                        isSelf: data.sender_id === userId,
-                    };
-                    console.log("Sender ID:", data.sender_id, "User ID:", userId, "Is Self:", newMsg.isSelf);
-                    setMessages(prev => [...prev, newMsg]);
-                } catch {
-                    console.error('Failed to parse message:', event.data);
+            // ws.onmessage = (event: MessageEvent) => {
+            //     try {
+            //         const data: OutgoingMsg = JSON.parse(event.data);
+            //         const newMsg: ChatMessage = {
+            //             ...data,
+            //             id: `${Date.now()}-${Math.random()}`,
+            //             timestamp: new Date(),
+            //             isSelf: data.sender_id === userId,
+            //         };
+            //         console.log("Sender ID:", data.sender_id, "User ID:", userId, "Is Self:", newMsg.isSelf);
+            //         setMessages(prev => [...prev, newMsg]);
+            //     } catch {
+            //         console.error('Failed to parse message:', event.data);
+            //     }
+            // };
+
+
+            //reads from backend that peer has joined so that patient/doctor can send the SDP offer.
+            ws.onmessage = async (event: MessageEvent) => {
+                const message = JSON.parse(event.data);
+                console.log("Received:", message);
+                switch (message.type) {
+                    case "chatMsg":
+                        // Handle chat message
+                        try {
+                            const data: OutgoingMsg = JSON.parse(event.data);
+                            const newMsg: ChatMessage = {
+                                ...data,
+                                id: `${Date.now()}-${Math.random()}`,
+                                timestamp: new Date(),
+                                isSelf: data.sender_id === userId,
+                            };
+                            console.log("Sender ID:", data.sender_id, "User ID:", userId, "Is Self:", newMsg.isSelf);
+                            setMessages(prev => [...prev, newMsg]);
+                        } catch {
+                            console.error('Failed to parse message:', event.data);
+                        }
+                        break;
+                    case "peer-joined":
+                        //creates and sends the SDP offer from frontend to server
+                        console.log("Peer joined. Creating offer...");
+                        await createOffer();
+                        break;
+
+                    case "sdp_offer":
+                        //accepts the SDP offer and creates a SDP answer and sends to server
+                        console.log("Got SDP Offer");
+                        await handleOffer(message.sdp);
+                        break;
+
+                    case "sdp_answer":
+                        //accepts the SDP answer and sets it as remote description
+                        console.log("Got SDP Answer");
+                        await handleAnswer(message.sdp);
+                        break;
+
+                    case "ice_candidate":
+                        //accepts the ICE candidate and adds it to the peer connection
+                        console.log("Got ICE Candidate");
+
+                    default:
+                        console.warn("Unknown message type:", message.type);
                 }
             };
 
@@ -264,15 +313,14 @@ export default function ConsultationRoom({
             window.close();
         }
     };
-
     const isDoctor = userRole === 'doctor';
 
 
-    //------video call feature
+    //------WebRTC--------
     const localVideoRef = useRef<HTMLVideoElement | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-
+    const socketRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
         const initWebRTC = async () => {
@@ -327,6 +375,114 @@ export default function ConsultationRoom({
         };
     }, []);
 
+    //function for creating the SDP offer 
+    const createOffer = async () => {
+        try {
+            const peerConnection = peerConnectionRef.current;
+            const socket = socketRef.current;
+
+            if (!peerConnection) {
+                console.error(
+                    "PeerConnection not available"
+                );
+                return;
+            }
+
+            if (!socket) {
+                console.error("WebSocket not available");
+                return;
+            }
+
+            // Create SDP offer
+            const offer = await peerConnection.createOffer();
+            console.log("Created offer:", offer);
+
+            // Set local description
+            await peerConnection.setLocalDescription(offer);
+            console.log("Local description set");
+
+            // Send offer through WebSocket
+            socket.send(
+                JSON.stringify({
+                    type: "offer",
+                    sdp: offer.sdp,
+                })
+            );
+
+            console.log("Offer sent to server");
+        } catch (error) {
+            console.error("Error creating offer:", error);
+        }
+    };
+
+
+    //handles the incoming offer from Go Server
+    const handleOffer = async (sdp: string) => {
+        try {
+            const peerConnection = peerConnectionRef.current;
+            const socket = socketRef.current;
+
+            if (!peerConnection) {
+                console.error("PeerConnection not available");
+                return;
+            }
+
+            if (!socket) {
+                console.error("WebSocket not available");
+                return;
+            }
+
+            // 1. Set remote offer
+            await peerConnection.setRemoteDescription(
+                {
+                    type: "offer",
+                    sdp: sdp,
+                });
+            console.log("Remote offer set");
+
+            // 2. Create answer
+            const answer = await peerConnection.createAnswer();
+
+            console.log("Created answer:", answer);
+            // 3. Set local answer
+            await peerConnection.setLocalDescription(answer);
+            console.log("Local answer set");
+
+            // 4. Send answer
+            socket.send(
+                JSON.stringify({
+                    type: "answer",
+                    sdp: answer.sdp,
+                })
+            );
+            console.log("Answer sent");
+        } catch (error) {
+            console.error("Error handling offer:", error);
+        }
+    };
+
+
+    //function for handling incoming answers from other user.
+    const handleAnswer = async (sdp: string) => {
+        try {
+            const peerConnection = peerConnectionRef.current;
+            if (!peerConnection) {
+                console.error("PeerConnection not available");
+                return;
+            }
+
+            await peerConnection.setRemoteDescription(
+                {
+                    type: "answer",
+                    sdp: sdp,
+                }
+            );
+            console.log("Remote answer set");
+        } catch (error) {
+            console.error("Error handling answer:", error);
+        }
+    };
+
     const turnCameraOff = () => {
         const stream = localStreamRef.current;
         if (!stream) return;
@@ -364,13 +520,9 @@ export default function ConsultationRoom({
 
             //Store the stream in the ref so that it can be used later
             localStreamRef.current = newStream;
-
             setIsVideoOff(false); //video off false
         } catch (error) {
-            console.error(
-                "Unable to access camera:",
-                error
-            );
+            console.error("Unable to access camera:", error);
         }
     };
 
@@ -390,20 +542,20 @@ export default function ConsultationRoom({
         });
     }, [isVideoOff]);
 
-    
+
     //mute and unmute microphone feature.
-    const toggleMic=async()=>{
-        const stream=localStreamRef.current;
-        if(!stream){
+    const toggleMic = async () => {
+        const stream = localStreamRef.current;
+        if (!stream) {
             return;
         }
 
-        const audioTrack=stream.getAudioTracks()[0];
-        if(!audioTrack){
+        const audioTrack = stream.getAudioTracks()[0];
+        if (!audioTrack) {
             return;
         }
 
-        audioTrack.enabled=!audioTrack.enabled;
+        audioTrack.enabled = !audioTrack.enabled;
         setIsMuted(!audioTrack.enabled);
     }
     return (

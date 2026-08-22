@@ -25,7 +25,17 @@ type OutgoingMsg struct {
 	Msg       string `json:"msg" binding:"required"`
 }
 
-// fetch the msg from frontend
-type IncomingMsg struct {
-	Msg string `json:"msg" binding:"required"`
+// Struct useful for Signalling. 
+type SignalMsg struct {
+	Msg string ` json:"msg,omitempty" `
+	Type string ` json:"type" `
+	SDP string ` json:"sdp,omitempty" `
+	Candidate string ` json:"candidate,omitempty" `
 }
+
+// //signalling struct for WebRTC
+// type SignalMsg struct{
+// 	Type string ` json:"type" `
+// 	SDP string ` json:"sdp,omitempty" `
+// 	Candidate string ` json:"candidate,omitempty" `
+// }

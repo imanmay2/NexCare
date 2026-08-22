@@ -61,16 +61,40 @@ func WebSocketHandler(ctx *gin.Context) {
 	log.Println("Room--->",Rooms)
 	
 
+	//notify the other person (if present) in the room that peer has joined the room.  --> send to frontend
+	peerJoinedMsg := model.SignalMsg{
+		Type: "peer-joined",
+		Msg:  "Peer has joined the room",
+	}
+
+	//marshal the data into JSON format
+	peerJoinedData, err := json.Marshal(peerJoinedMsg)
+	if err != nil {
+		log.Println("Error in marshalling the peer-joined message")
+		return
+	}
+
+	for _,client=range Rooms[joinMsg.Appointment_id]{
+		if client.User_id!=userID{
+			err = client.Conn.WriteMessage(websocket.TextMessage, peerJoinedData)
+			if err!=nil{
+				log.Println("Error occured in sending peer-msg")
+				break
+			}
+		}
+	}
+	
+
 	//for the remaining chat messages.
 	for {
 		//read the incoming messages coming from the frontend.
 		_, data, err = conn.ReadMessage()
 		if err != nil {
 			log.Println("Error in reading the chat msg in Chat Section:", err)
-			break
+			continue
 		}
 		//unmarshal into Go Struct
-		var incoming model.IncomingMsg
+		var incoming model.SignalMsg
 		err = json.Unmarshal(data, &incoming)
 		if err != nil {
 			log.Println("Error in unmarhsalling the data",err.Error())
