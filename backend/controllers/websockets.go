@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	util "nexcare/backend/util"
 )
 
 // converts the http request into socket connections which will be alive
@@ -22,11 +23,11 @@ var Rooms = make(map[string][]*model.Client)
 
 // socket handler functions.
 func WebSocketHandler(ctx *gin.Context) {
-	userID:=ctx.GetString("userID")
+	userID := ctx.GetString("userID")
 	//socket connection
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		log.Fatalf("Couldnot connect to the Socket. ")
+		log.Println("Couldnot connect to the Socket. ")
 		return
 	}
 	defer conn.Close()
@@ -35,7 +36,7 @@ func WebSocketHandler(ctx *gin.Context) {
 
 	_, data, err := conn.ReadMessage()
 	if err != nil {
-		log.Println("Error in Reading the first Message from frontend")
+		log.Println("Error in Reading the first Message from frontend")	
 		return
 	}
 
@@ -43,7 +44,7 @@ func WebSocketHandler(ctx *gin.Context) {
 	//unmarshal the data to Go Struct
 	err = json.Unmarshal(data, &joinMsg)
 	if err != nil {
-		log.Println("Error in unmarshalling the fetched frontend data in sockets",err.Error())
+		log.Println("Error in unmarshalling the fetched frontend data in sockets", err.Error())
 		return
 	}
 
@@ -52,14 +53,13 @@ func WebSocketHandler(ctx *gin.Context) {
 		Conn:           conn,
 		Appointment_id: joinMsg.Appointment_id,
 		Role:           joinMsg.Role,
-		User_id:       userID, //fetching the user id from the context itself.
+		User_id:        userID, //fetching the user id from the context itself.
 	}
 
 	//add the client in the room.   room_id will be the appointment_id
 	Rooms[joinMsg.Appointment_id] = append(Rooms[joinMsg.Appointment_id], client)
 	log.Printf("User %s joined Room : %s", userID, joinMsg.Appointment_id)
-	log.Println("Room--->",Rooms)
-	
+	log.Println("Room--->", Rooms)
 
 	//notify the other person (if present) in the room that peer has joined the room.  --> send to frontend
 	peerJoinedMsg := model.SignalMsg{
@@ -74,66 +74,69 @@ func WebSocketHandler(ctx *gin.Context) {
 		return
 	}
 
-	for _,client=range Rooms[joinMsg.Appointment_id]{
-		if client.User_id!=userID{
+	for _, client = range Rooms[joinMsg.Appointment_id] {
+		if client.User_id != userID {
 			err = client.Conn.WriteMessage(websocket.TextMessage, peerJoinedData)
-			if err!=nil{
+			if err != nil {
 				log.Println("Error occured in sending peer-msg")
 				break
 			}
 		}
 	}
-	
 
-	//for the remaining chat messages.
+	//for the future signalling.
 	for {
-		//read the incoming messages coming from the frontend.
 		_, data, err = conn.ReadMessage()
 		if err != nil {
-			log.Println("Error in reading the chat msg in Chat Section:", err)
-			continue
-		}
-		//unmarshal into Go Struct
-		var incoming model.SignalMsg
-		err = json.Unmarshal(data, &incoming)
-		if err != nil {
-			log.Println("Error in unmarhsalling the data",err.Error())
-			continue
-		}
-
-		//now from frontend as the data is fetched so send in the respective rooms.
-		clientMsg := model.OutgoingMsg{
-			Sender_id: client.User_id,
-			Role:      client.Role,
-			Msg:       incoming.Msg,
-		}
-
-		//send all the clients in the room-->BROADCASTING-->send to frontend
-		roomClients := Rooms[client.Appointment_id]
-		for _, roomClient := range roomClients {
-			err = roomClient.Conn.WriteJSON(clientMsg)
-			if err != nil {
-				log.Println("Error in writing the chat msg to room clients:", err)
-				break
-			}
-		}
-	}
-
-	//when client gets disconnected,, remove the client from the rooms.
-	roomClients:=Rooms[client.Appointment_id]
-	for i,roomClient:=range roomClients{
-		if roomClient==client{
-			//remove the client and keep the existing clients only using index value
-			Rooms[client.Appointment_id]=append(roomClients[:i],roomClients[i+1:]...)
-			log.Printf("User %s has been disconnected",client.User_id)
+			log.Println("Error in reading the message", err)
 			break
 		}
+		//unmarshal into Go Struct
+		var baseMsg model.SignalMsg
+		err = json.Unmarshal(data, &baseMsg)
+		if err != nil {
+			log.Println("Error in unmarhsalling the data", err.Error())
+			continue
+		}
+
+		//using switch case to handle the different types of messages coming from the frontend.
+		switch baseMsg.Type {
+		case "chat":
+			//send the chat message to all the clients in the room.
+			//now from frontend as the data is fetched so send in the respective rooms.
+			clientMsg := model.OutgoingMsg{
+				Sender_id: client.User_id,
+				Role:      client.Role,
+				Msg:       baseMsg.Msg,
+			}
+
+			//send all the clients in the room-->BROADCASTING-->send to frontend
+			roomClients := Rooms[client.Appointment_id]
+			for _, roomClient := range roomClients {
+				err = roomClient.Conn.WriteJSON(clientMsg)
+				if err != nil {
+					log.Println("Error in writing the chat msg to room clients:", err)
+					break
+				}
+			}
+
+		case "sdp_offer", "sdp_answer":
+			//signal the SDP Offer , answer to the other peer in the room.
+			util.SignalParticipants(baseMsg, Rooms[client.Appointment_id], client.User_id)
+			break
+		
+
+	case "ice_candidate":
+			//signal the ICE candidate to the other peer in the room.
+			util.SignalParticipants(baseMsg, Rooms[client.Appointment_id], client.User_id)
+			
+		default:
+			log.Println("Unknown message type received:", baseMsg.Type)
+		}
 	}
+	//when client gets disconnected, remove the client from the rooms.
+	util.RemoveClients(Rooms, client)
 
 	///if there exists no clients in the room,  cleanup---> so that unnecssary memory usage won't be there.
-	if len(Rooms[client.Appointment_id])==0{
-		delete(Rooms, client.Appointment_id)
-		log.Printf("Room %s has been removed", client.Appointment_id)
-	}
-	log.Println("Room--->",Rooms)
+	util.RemoveRoom(Rooms, client)
 }

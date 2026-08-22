@@ -27,8 +27,8 @@ type OutgoingMsg struct {
 
 // Struct useful for Signalling. 
 type SignalMsg struct {
-	Msg string ` json:"msg,omitempty" `
 	Type string ` json:"type" `
+	Msg string ` json:"msg,omitempty" `
 	SDP string ` json:"sdp,omitempty" `
 	Candidate string ` json:"candidate,omitempty" `
 }

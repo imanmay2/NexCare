@@ -6,7 +6,12 @@ import {
 } from 'lucide-react';
 
 // ─── Type Definitions matching Go backend structs ──────────────────────────
-
+interface ICECandidateStructure {
+    candidate: string;
+    sdpMid: string | null;
+    sdpMLineIndex: number | null;
+    usernameFragment?: string | null;
+}
 interface ConsultationRoomProps {
     appointmentId: string;
     userRole: 'patient' | 'doctor';
@@ -23,6 +28,7 @@ interface OutgoingMsg {
 
 // Matches Go: IncomingMsg — messages sent TO server
 interface IncomingMsg {
+    type: 'chat';
     msg: string;
 }
 
@@ -194,7 +200,7 @@ export default function ConsultationRoom({
                 const message = JSON.parse(event.data);
                 console.log("Received:", message);
                 switch (message.type) {
-                    case "chatMsg":
+                    case "chat":
                         // Handle chat message
                         try {
                             const data: OutgoingMsg = JSON.parse(event.data);
@@ -230,8 +236,13 @@ export default function ConsultationRoom({
 
                     case "ice_candidate":
                         //accepts the ICE candidate and adds it to the peer connection
-                        console.log("Got ICE Candidate");
-
+                        await handleRemoteICECandidate(message.candidate);
+                        console.log("IDC Candidate sent-->",message.candidate);
+                        break;
+                    case "peer-left":
+                        // Handle peer leaving
+                        console.log("Peer left the call.");
+                        break;
                     default:
                         console.warn("Unknown message type:", message.type);
                 }
@@ -292,7 +303,7 @@ export default function ConsultationRoom({
         inputRef.current?.focus();
 
         if (wsRef.current?.readyState === WebSocket.OPEN) {
-            const payload: IncomingMsg = { msg: text };
+            const payload: IncomingMsg = { type: 'chat', msg: text };
             wsRef.current.send(JSON.stringify(payload));
         } else {
             // WS offline — inject a dummy reply for testing
@@ -320,7 +331,9 @@ export default function ConsultationRoom({
     const localVideoRef = useRef<HTMLVideoElement | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-    const socketRef = useRef<WebSocket | null>(null);
+    // const socketRef = useRef<WebSocket | null>(null);
+
+
 
     useEffect(() => {
         const initWebRTC = async () => {
@@ -338,11 +351,38 @@ export default function ConsultationRoom({
                     localVideoRef.current.srcObject = stream;
                 }
 
-                //cretae the webRTC peer connection
+                //create the webRTC peer connection
                 const peerConnection = new RTCPeerConnection();
                 peerConnectionRef.current = peerConnection;
 
-                //add the medias vid +audi
+                //create the ICE candidate keys in the browser and send it to the server so that it can be sent to other peer.
+                //ICE candidates will be triggered automatically by browser. 
+                peerConnection.onicecandidate = (event) => {
+                    if (!event.candidate) {
+                        return;
+                    }
+
+                    const socket = wsRef.current;
+                    if (!socket) {
+                        console.error("WebSocket is not available");
+                        return;
+                    }
+
+                    socket.send(
+                        JSON.stringify({
+                            type: "ice-candidate",
+                            candidate: {
+                                candidate: event.candidate.candidate,
+                                sdpMid: event.candidate.sdpMid,
+                                sdpMLineIndex: event.candidate.sdpMLineIndex,
+                                usernameFragment: event.candidate.usernameFragment,
+                            },
+                        })
+                    );
+                    console.log("ICE candidate sent:", event.candidate);
+                };
+
+                //add the medias vid +audio
                 stream.getTracks().forEach((track) => {
                     peerConnection.addTrack(track, stream);
                 });
@@ -358,16 +398,14 @@ export default function ConsultationRoom({
         initWebRTC();
 
         return () => {
-            const stream =
-                localStreamRef.current;
+            const stream = localStreamRef.current;
 
             if (stream) {
                 stream.getTracks().forEach((track) => {
                     track.stop();
                 });
             }
-            const peerConnection =
-                peerConnectionRef.current;
+            const peerConnection = peerConnectionRef.current;
             if (peerConnection) {
                 peerConnection.close();
             }
@@ -379,20 +417,17 @@ export default function ConsultationRoom({
     const createOffer = async () => {
         try {
             const peerConnection = peerConnectionRef.current;
-            const socket = socketRef.current;
-
+            const socket = wsRef.current;
             if (!peerConnection) {
                 console.error(
                     "PeerConnection not available"
                 );
                 return;
             }
-
             if (!socket) {
                 console.error("WebSocket not available");
                 return;
             }
-
             // Create SDP offer
             const offer = await peerConnection.createOffer();
             console.log("Created offer:", offer);
@@ -404,11 +439,10 @@ export default function ConsultationRoom({
             // Send offer through WebSocket
             socket.send(
                 JSON.stringify({
-                    type: "offer",
+                    type: "sdp_offer",
                     sdp: offer.sdp,
                 })
             );
-
             console.log("Offer sent to server");
         } catch (error) {
             console.error("Error creating offer:", error);
@@ -420,8 +454,7 @@ export default function ConsultationRoom({
     const handleOffer = async (sdp: string) => {
         try {
             const peerConnection = peerConnectionRef.current;
-            const socket = socketRef.current;
-
+            const socket = wsRef.current;
             if (!peerConnection) {
                 console.error("PeerConnection not available");
                 return;
@@ -440,6 +473,13 @@ export default function ConsultationRoom({
                 });
             console.log("Remote offer set");
 
+            //Flush the ICE Candidates
+            for (const candidate of pendingCandidatesRef.current) {
+                await peerConnection.addIceCandidate(candidate);
+            }
+
+            pendingCandidatesRef.current = [];
+
             // 2. Create answer
             const answer = await peerConnection.createAnswer();
 
@@ -451,13 +491,35 @@ export default function ConsultationRoom({
             // 4. Send answer
             socket.send(
                 JSON.stringify({
-                    type: "answer",
+                    type: "sdp_answer",
                     sdp: answer.sdp,
                 })
             );
             console.log("Answer sent");
         } catch (error) {
             console.error("Error handling offer:", error);
+        }
+    };
+
+    const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+    //function for handling incoming ICE candidates from other user.
+    const handleRemoteICECandidate = async (candidateData: ICECandidateStructure) => {
+        try {
+            const peerConnection = peerConnectionRef.current;
+            if (!peerConnection) {
+                console.error("PeerConnection not available");
+                return;
+            }
+
+            if (!peerConnection.remoteDescription) {
+                pendingCandidatesRef.current.push(candidateData);
+                console.log("ICE candidate queued");
+                return;
+            }
+            await peerConnection.addIceCandidate(candidateData);
+            console.log("Remote ICE candidate added:", candidateData);
+        } catch (error) {
+            console.error("Error adding remote ICE candidate:", error);
         }
     };
 
