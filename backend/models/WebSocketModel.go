@@ -1,6 +1,8 @@
 package model
 
 import (
+	"encoding/json"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -30,7 +32,7 @@ type SignalMsg struct {
 	Type string ` json:"type" `
 	Msg string ` json:"msg,omitempty" `
 	SDP string ` json:"sdp,omitempty" `
-	Candidate string ` json:"candidate,omitempty" `
+	Candidate json.RawMessage ` json:"candidate,omitempty" `
 }
 
 // //signalling struct for WebRTC

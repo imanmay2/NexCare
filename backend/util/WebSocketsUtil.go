@@ -10,6 +10,7 @@ import (
 func SignalParticipants(baseMsg model.SignalMsg,RoomClients []*model.Client, sender_id string){
 	for _, client := range RoomClients {
 		if client.User_id != sender_id {
+			log.Printf(" Message Type : %s",baseMsg.Type)
 			err := client.Conn.WriteJSON(baseMsg)
 			if err != nil {
 				client.Conn.Close()

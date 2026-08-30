@@ -66,14 +66,12 @@ func WebSocketHandler(ctx *gin.Context) {
 		Type: "peer-joined",
 		Msg:  "Peer has joined the room",
 	}
-
 	//marshal the data into JSON format
 	peerJoinedData, err := json.Marshal(peerJoinedMsg)
 	if err != nil {
 		log.Println("Error in marshalling the peer-joined message")
 		return
 	}
-
 	for _, client = range Rooms[joinMsg.Appointment_id] {
 		if client.User_id != userID {
 			err = client.Conn.WriteMessage(websocket.TextMessage, peerJoinedData)
@@ -83,6 +81,7 @@ func WebSocketHandler(ctx *gin.Context) {
 			}
 		}
 	}
+
 
 	//for the future signalling.
 	for {
@@ -126,7 +125,7 @@ func WebSocketHandler(ctx *gin.Context) {
 			break
 		
 
-	case "ice_candidate":
+	case "ice-candidate":
 			//signal the ICE candidate to the other peer in the room.
 			util.SignalParticipants(baseMsg, Rooms[client.Appointment_id], client.User_id)
 			
