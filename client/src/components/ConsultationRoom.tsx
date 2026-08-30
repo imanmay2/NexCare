@@ -135,6 +135,7 @@ export default function ConsultationRoom({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [isRemoteVideoAvailable, setIsRemoteVideoAvailable] = useState(false);
 
     // Timer
     useEffect(() => {
@@ -171,6 +172,16 @@ export default function ConsultationRoom({
                 }
 
                 ws.send(JSON.stringify(joinMsg)) // join into room.
+                for (const candidate of pendingLocalCandidatesRef.current) {
+                    ws.send(
+                        JSON.stringify({
+                            type: "ice_candidate",
+                            candidate,
+                        })
+                    );
+                }
+
+                pendingLocalCandidatesRef.current = [];
                 if (reconnectTimerRef.current) {
                     clearTimeout(reconnectTimerRef.current);
                     reconnectTimerRef.current = null;
@@ -218,6 +229,9 @@ export default function ConsultationRoom({
                         break;
                     case "peer-joined":
                         //creates and sends the SDP offer from frontend to server
+                        // if (!isDoctor) {
+                        //     await createOffer();
+                        // }
                         console.log("Peer joined. Creating offer...");
                         await createOffer();
                         break;
@@ -237,7 +251,7 @@ export default function ConsultationRoom({
                     case "ice_candidate":
                         //accepts the ICE candidate and adds it to the peer connection
                         await handleRemoteICECandidate(message.candidate);
-                        console.log("IDC Candidate sent-->",message.candidate);
+                        console.log("IDC Candidate sent-->", message.candidate);
                         break;
                     case "peer-left":
                         // Handle peer leaving
@@ -329,8 +343,10 @@ export default function ConsultationRoom({
 
     //------WebRTC--------
     const localVideoRef = useRef<HTMLVideoElement | null>(null);
+    const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+    const pendingLocalCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
     // const socketRef = useRef<WebSocket | null>(null);
 
 
@@ -338,6 +354,22 @@ export default function ConsultationRoom({
     useEffect(() => {
         const initWebRTC = async () => {
             try {
+                //create the webRTC peer connection
+                const peerConnection = new RTCPeerConnection();
+                peerConnectionRef.current = peerConnection;
+
+                //gets the video from the receiver side.
+                peerConnection.ontrack = (event) => {
+                    console.log("Remote track received:", event);
+                    const remoteStream = event.streams[0];
+                    if (!remoteVideoRef.current) {
+                        return;
+                    }
+                    remoteVideoRef.current.srcObject = remoteStream;
+                    setIsRemoteVideoAvailable(true);
+                    console.log("------->>>>Remote video available");
+                };
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
@@ -351,38 +383,64 @@ export default function ConsultationRoom({
                     localVideoRef.current.srcObject = stream;
                 }
 
-                //create the webRTC peer connection
-                const peerConnection = new RTCPeerConnection();
-                peerConnectionRef.current = peerConnection;
-
                 //create the ICE candidate keys in the browser and send it to the server so that it can be sent to other peer.
-                //ICE candidates will be triggered automatically by browser. 
+                // //ICE candidates will be triggered automatically by browser. 
+                // peerConnection.onicecandidate = (event) => {
+                //     if (!event.candidate) {
+                //         return;
+                //     }
+
+                //     const socket = wsRef.current;
+                //     if (!socket) {
+                //         console.error("WebSocket is not available");
+                //         return;
+                //     }
+
+                //     socket.send(
+                //         JSON.stringify({
+                //             type: "ice_candidate",
+                //             candidate: {
+                //                 candidate: event.candidate.candidate,
+                //                 sdpMid: event.candidate.sdpMid,
+                //                 sdpMLineIndex: event.candidate.sdpMLineIndex,
+                //                 usernameFragment: event.candidate.usernameFragment,
+                //             },
+                //         })
+                //     );
+                //     console.log("ICE candidate sent:", event.candidate);
+                // };
+
                 peerConnection.onicecandidate = (event) => {
                     if (!event.candidate) {
                         return;
                     }
 
+                    const candidate = {
+                        candidate: event.candidate.candidate,
+                        sdpMid: event.candidate.sdpMid,
+                        sdpMLineIndex: event.candidate.sdpMLineIndex,
+                        usernameFragment: event.candidate.usernameFragment,
+                    };
+
                     const socket = wsRef.current;
-                    if (!socket) {
-                        console.error("WebSocket is not available");
+
+                    if (!socket || socket.readyState !== WebSocket.OPEN) {
+                        pendingLocalCandidatesRef.current.push(candidate);
+                        console.log("ICE candidate queued:", candidate);
                         return;
                     }
 
                     socket.send(
                         JSON.stringify({
-                            type: "ice-candidate",
-                            candidate: {
-                                candidate: event.candidate.candidate,
-                                sdpMid: event.candidate.sdpMid,
-                                sdpMLineIndex: event.candidate.sdpMLineIndex,
-                                usernameFragment: event.candidate.usernameFragment,
-                            },
+                            type: "ice_candidate",
+                            candidate,
                         })
                     );
-                    console.log("ICE candidate sent:", event.candidate);
+
+                    console.log("ICE candidate sent:", candidate);
                 };
 
-                //add the medias vid +audio
+                // add the medias vid +audio
                 stream.getTracks().forEach((track) => {
                     peerConnection.addTrack(track, stream);
                 });
@@ -432,6 +490,10 @@ export default function ConsultationRoom({
             const offer = await peerConnection.createOffer();
             console.log("Created offer:", offer);
 
+            console.log("========== PATIENT SDP OFFER ==========");
+            console.log(offer.sdp);
+            console.log("========================================");
+
             // Set local description
             await peerConnection.setLocalDescription(offer);
             console.log("Local description set");
@@ -473,6 +535,11 @@ export default function ConsultationRoom({
                 });
             console.log("Remote offer set");
 
+
+
+
+
+
             //Flush the ICE Candidates
             for (const candidate of pendingCandidatesRef.current) {
                 await peerConnection.addIceCandidate(candidate);
@@ -482,6 +549,10 @@ export default function ConsultationRoom({
 
             // 2. Create answer
             const answer = await peerConnection.createAnswer();
+
+            console.log("========== DOCTOR SDP ANSWER ==========");
+            console.log(answer.sdp);
+            console.log("========================================");
 
             console.log("Created answer:", answer);
             // 3. Set local answer
@@ -496,6 +567,8 @@ export default function ConsultationRoom({
                 })
             );
             console.log("Answer sent");
+
+            console.log("-----TEST----", peerConnection.getSenders());
         } catch (error) {
             console.error("Error handling offer:", error);
         }
@@ -752,6 +825,19 @@ export default function ConsultationRoom({
                             overflow: 'hidden', display: 'flex',
                             alignItems: 'center', justifyContent: 'center',
                         }}>
+
+                            <video
+                                ref={remoteVideoRef}
+                                autoPlay
+                                playsInline
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                }}
+                            />
                             {/* Remote participant placeholder */}
                             <div style={{ textAlign: 'center' }}>
                                 <div style={{
@@ -769,6 +855,8 @@ export default function ConsultationRoom({
                                     Adaptive bandwidth active
                                 </p>
                             </div>
+
+
 
                             {/* PiP self-view */}
                             <div style={{

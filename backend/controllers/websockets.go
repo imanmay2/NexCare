@@ -125,7 +125,7 @@ func WebSocketHandler(ctx *gin.Context) {
 			break
 		
 
-	case "ice-candidate":
+	case "ice_candidate":
 			//signal the ICE candidate to the other peer in the room.
 			util.SignalParticipants(baseMsg, Rooms[client.Appointment_id], client.User_id)
 			
