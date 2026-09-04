@@ -354,8 +354,14 @@ export default function ConsultationRoom({
     useEffect(() => {
         const initWebRTC = async () => {
             try {
-                //create the webRTC peer connection
-                const peerConnection = new RTCPeerConnection();
+                //create the webRTC peer connection with STUN server configuration
+                const peerConnection = new RTCPeerConnection({
+                    iceServers: [
+                        {
+                            urls: "stun:stun.l.google.com:19302",
+                        },
+                    ],
+                });
                 peerConnectionRef.current = peerConnection;
 
                 //gets the video from the receiver side.
@@ -436,10 +442,32 @@ export default function ConsultationRoom({
                             candidate,
                         })
                     );
-
                     console.log("ICE candidate sent:", candidate);
                 };
 
+                //shows the state of the gathering state.
+                peerConnection.onicegatheringstatechange = () => {
+                    console.log(
+                        "ICE Gathering State:",
+                        peerConnection.iceGatheringState
+                    );
+                };
+
+                //beneficial for debugging. 
+                peerConnection.oniceconnectionstatechange = () => {
+                    console.log(
+                        "ICE Connection State:",
+                        peerConnection.iceConnectionState
+                    );
+                };
+
+                //it explicitly checks the webRTC connections.
+                peerConnection.onconnectionstatechange = () => {
+                    console.log(
+                        "WebRTC Connection State:",
+                        peerConnection.connectionState
+                    );
+                };
                 // add the medias vid +audio
                 stream.getTracks().forEach((track) => {
                     peerConnection.addTrack(track, stream);
