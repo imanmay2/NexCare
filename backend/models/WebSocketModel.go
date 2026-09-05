@@ -41,3 +41,22 @@ type SignalMsg struct {
 // 	SDP string ` json:"sdp,omitempty" `
 // 	Candidate string ` json:"candidate,omitempty" `
 // }
+
+
+
+type TwilioTokenResponse struct {
+	AccountSID  string            `json:"account_sid"`
+	DateCreated string            `json:"date_created"`
+	DateUpdated string            `json:"date_updated"`
+	ICEServers  []TwilioICEServer `json:"ice_servers"`
+	Password    string            `json:"password"`
+	TTL         string            `json:"ttl"`
+	Username    string            `json:"username"`
+}
+
+type TwilioICEServer struct {
+	Credential string `json:"credential,omitempty"`
+	URL        string `json:"url"`
+	URLs       string `json:"urls"`
+	Username   string `json:"username,omitempty"`
+}

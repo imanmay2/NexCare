@@ -6,10 +6,11 @@ import (
 	"log"
 	"net/http"
 	model "nexcare/backend/models"
+	util "nexcare/backend/util"
+	
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	util "nexcare/backend/util"
 )
 
 // converts the http request into socket connections which will be alive
@@ -36,7 +37,7 @@ func WebSocketHandler(ctx *gin.Context) {
 
 	_, data, err := conn.ReadMessage()
 	if err != nil {
-		log.Println("Error in Reading the first Message from frontend")	
+		log.Println("Error in Reading the first Message from frontend")
 		return
 	}
 
@@ -82,7 +83,6 @@ func WebSocketHandler(ctx *gin.Context) {
 		}
 	}
 
-
 	//for the future signalling.
 	for {
 		_, data, err = conn.ReadMessage()
@@ -123,12 +123,11 @@ func WebSocketHandler(ctx *gin.Context) {
 			//signal the SDP Offer , answer to the other peer in the room.
 			util.SignalParticipants(baseMsg, Rooms[client.Appointment_id], client.User_id)
 			break
-		
 
-	case "ice_candidate":
+		case "ice_candidate":
 			//signal the ICE candidate to the other peer in the room.
 			util.SignalParticipants(baseMsg, Rooms[client.Appointment_id], client.User_id)
-			
+
 		default:
 			log.Println("Unknown message type received:", baseMsg.Type)
 		}
@@ -138,4 +137,20 @@ func WebSocketHandler(ctx *gin.Context) {
 
 	///if there exists no clients in the room,  cleanup---> so that unnecssary memory usage won't be there.
 	util.RemoveRoom(Rooms, client)
+}
+
+
+
+
+func GetICEServers(ctx *gin.Context) {
+	iceServers, err := util.GetTwilioICEServers()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to generate ICE servers",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"ice_servers": iceServers.ICEServers,
+	})
 }

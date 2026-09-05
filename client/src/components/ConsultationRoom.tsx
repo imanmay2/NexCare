@@ -38,6 +38,17 @@ interface ChatMessage extends OutgoingMsg {
     isSelf: boolean;
 }
 
+interface TwilioICEServer {
+    url?: string;
+    urls: string;
+    username?: string;
+    credential?: string;
+}
+
+interface ICEServersResponse {
+    ice_servers: TwilioICEServer[];
+}
+
 // ─── WebSocket URL ──────────────────────────────────────────────────────────
 const WS_BASE_URL = 'ws://localhost:8090/ws/connect';
 
@@ -354,13 +365,10 @@ export default function ConsultationRoom({
     useEffect(() => {
         const initWebRTC = async () => {
             try {
-                //create the webRTC peer connection with STUN server configuration
+                const response = await fetch("http://localhost:8090/patient/fetchTwilioToken");
+                const data: ICEServersResponse = await response.json();
                 const peerConnection = new RTCPeerConnection({
-                    iceServers: [
-                        {
-                            urls: "stun:stun.l.google.com:19302",
-                        },
-                    ],
+                    iceServers:data.ice_servers
                 });
                 peerConnectionRef.current = peerConnection;
 
@@ -419,6 +427,12 @@ export default function ConsultationRoom({
                 peerConnection.onicecandidate = (event) => {
                     if (!event.candidate) {
                         return;
+                    }
+
+                    if (event.candidate) {
+                        console.log("FULL ICE CANDIDATE:", event.candidate);
+                        console.log("CANDIDATE TYPE:", event.candidate.type);
+                        console.log("CANDIDATE STRING:", event.candidate.candidate);
                     }
 
                     const candidate = {

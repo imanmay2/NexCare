@@ -30,6 +30,7 @@ func PatientRoutes(router *gin.Engine) {
 	patientGroup.GET("/labResults", controller.GetLabResults)             //Lab results.
 	patientGroup.POST("/symptomChecker", controller.SymptomChecker)
 	patientGroup.PATCH("/updatePatientProfile", controller.UpdatePatientData)
+	patientGroup.GET("/fetchTwilioToken",controller.GetICEServers)
 }
 
 func DoctorRoutes(router *gin.Engine) {
