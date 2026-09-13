@@ -1,0 +1,9 @@
+.next
+.git
+.gitignore
+
+npm-debug.log*
+
+!.env.example
+coverage
+.DS_Store

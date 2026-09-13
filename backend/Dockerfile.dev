@@ -1,13 +1,21 @@
-FROM golang:1.26.4-trixie
+# FROM golang:1.26
+# WORKDIR /app
+# COPY go.mod go.sum .
+# RUN go mod tidy
+# COPY . .
+# RUN go build -o main .
+# EXPOSE 8090
+# CMD ["go","run","main.go"]
+
+FROM golang:1.26-alpine
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
-
 RUN go mod download
 
-RUN go install github.com/air-verse/air@latest
+COPY . .
 
 EXPOSE 8090
 
-CMD ["air"]
+CMD ["go", "run", "main.go"]
