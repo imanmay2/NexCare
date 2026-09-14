@@ -1262,7 +1262,7 @@ export default function ConsultationRoom({
                 </div>
                 
             {Editor && (
-                <PrescriptionEditor onClose={() => setEditor(false)} appointmentId={''} />
+                <PrescriptionEditor onClose={() => setEditor(false)} appointmentId={appointmentId} />
             )}
             </div>
         </>

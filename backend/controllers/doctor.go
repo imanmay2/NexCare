@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"time"
 )
 
 func GetSchedule(ctx *gin.Context) {
@@ -353,5 +354,99 @@ func DeleteProfilePic(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"Message": "Profile picture deleted",
 		"success": true,
+	})
+}
+
+
+func FetchAppointmentDetails(ctx *gin.Context){
+	//get request from appointments table
+	var appointmentID,p_id string
+	var name,gender string
+	var age int8
+	userID:=ctx.GetString("userID")
+
+	query1:=` select a_id,p_id from appointments where d_id=$1 `
+	row1,err:=conn.DB.Query(context.Background(),query1,userID)
+	if err!=nil{
+		fmt.Printf("Error in fetching appointment details in prescription ")
+		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+		return
+	}
+	row1.Scan(&appointmentID,&p_id)
+
+	query2:=` select name,age,gender from users where role=$1 AND id=$2 `
+	row2,err:=conn.DB.Query(context.Background(),query2,"patient",p_id)
+	if err!=nil{
+		fmt.Printf("Error Fetching appintment")
+		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+		return
+	}
+
+	row2.Scan(&name,&age,&gender)
+	ctx.IndentedJSON(http.StatusOK, gin.H{
+		"Message": "Fetched Successfully",
+		"success": true,
+		"data": model.AppointmentDetails{
+			Id:   appointmentID,
+			P_id: p_id,
+			Name: name,
+			Age:age,
+			Gender:gender,
+		} ,
+	})
+}
+
+
+// --Remaining - return error to the prescriptions which are laready finalized.
+func AddPrescription(ctx *gin.Context) {
+	// userID:=ctx.GetString("userID") //gets the doctor ID
+	var prescription model.Prescription
+	err:=ctx.ShouldBindJSON(&prescription)
+	if err!=nil{
+		fmt.Printf("precrip error1")
+		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+		return
+	}
+
+	query:=`insert into consultation values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) `
+	
+	_,err=conn.DB.Exec(context.Background(),query,uuid.NewString(),time.Now(),prescription.A_id,prescription.Title,prescription.Symptoms,prescription.Diagnosis,prescription.Treatment,prescription.Physical_Examination,prescription.Drug,prescription.Summary,prescription.Follow_Up_Date,prescription.Status,prescription.Finalized_At)
+	if err!=nil{
+		fmt.Printf("Error in inserting prescription data Prescription")
+		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+		return
+	}
+
+	fmt.Printf("Prescription Added Successfully")
+	ctx.IndentedJSON(http.StatusCreated,gin.H{"Message":"Prescription Added Successfully","success":true})
+}
+
+
+//fetch the data 
+func FetchDraftPrescription(ctx *gin.Context){
+	// Get request, get the appointment_id from the params.
+	// search in consultation table.
+	var prescription model.Prescription
+	a_id:=ctx.Param("a_id")
+	q1:=` select a_id,title,symptoms,diagnosis,treatment,physical_examination,drug,investigation,summary,follow_up_date,status,finalizedAt from consultation where a_id=$1 `
+	row,err:=conn.DB.Query(context.Background(),q1,a_id)
+	if err!=nil{
+		if err==pgx.ErrNoRows{
+			fmt.Printf("No prescription found for the appointment in Draft")
+			ctx.IndentedJSON(http.StatusNotFound,gin.H{"Message":"No prescription found for the appointment","success":false})
+			return
+		}
+		fmt.Printf("Error in fetching prescription data")
+		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+		return
+	}
+	//I will get only 1 data from DB or no data. 
+	row.Scan(&prescription.A_id,&prescription.Title,&prescription.Symptoms,&prescription.Diagnosis,&prescription.Treatment,&prescription.Physical_Examination,&prescription.Drug,&prescription.Investigation,&prescription.Summary,&prescription.Follow_Up_Date,&prescription.Status,&prescription.Finalized_At)
+
+	
+	ctx.IndentedJSON(http.StatusOK, gin.H{
+		"Message": "Fetched Successfully",
+		"success": true,
+		"data":    prescription,
 	})
 }

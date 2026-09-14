@@ -58,3 +58,39 @@ type PatientMedicalRecord struct {
 	Height              float64       ` json:"height" `
 	SpO2                int64         ` json:"spo2" `
 }
+
+type Medicine struct{
+	Name string ` json:"name" binding:"required" `
+	Dosage string ` json:"dosage" binding:"required" `
+	Frequency string ` json:"frequency" binding:"required" `
+	Duration string ` json:"duration" binding:"required" `
+	DosageUnit string ` json:"dosageUnit" binding:"required" `
+	Form string ` json:"form" binding:"required" `
+	DurationUnit string ` json:"durationUnit" binding:"required" `
+	FoodInstructions string ` json:"foodInstructions" binding:"required" `
+	Instructions string ` json:"instructions" binding:"required" `
+}
+
+
+type Prescription struct{
+	A_id string ` json:"a_id" binding:"required" `
+	Title string ` json:"title" binding:"required" `
+	Diagnosis string ` json:"diagnosis" binding:"required" `
+	Treatment string ` json:"treatment" ` //same as general instruction
+	Symptoms string ` json:"symptoms" binding:"required" `
+	Physical_Examination string ` json:"physical_examination"  `
+	Drug []Medicine ` json:"drug" binding:"required" `
+	Investigation string ` json:"investigation" `
+	Summary string ` json:"summary" binding:"required" `
+	Follow_Up_Date time.Time ` json:"follow_up_date"  `
+	Status string ` json:"status" binding:"required" `
+	Finalized_At time.Time ` json:"finalizedAt"  `
+}
+
+type AppointmentDetails struct{
+	Id string 
+	P_id string 
+	Name string 
+	Age int8 
+	Gender string 
+}

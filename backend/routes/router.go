@@ -48,8 +48,9 @@ func DoctorRoutes(router *gin.Engine) {
 	doctorGroup.POST("/addPatientMedicalRecords", controller.AddPatientMedicalRecords)
 	doctorGroup.PUT("/updatePatientMedicalRecords", controller.UpdatePatientMedicalRecords)
     doctorGroup.POST("/addVitals", controller.AddPatientVitals)
+	doctorGroup.GET("/getPrescription", controller.FetchDraftPrescription)
+	doctorGroup.POST("/addPrescription", controller.AddPrescription)
 }
-
 
 
 func PaymentRoutes(router *gin.Engine) {
