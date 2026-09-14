@@ -5,6 +5,8 @@ import {
     FlaskConical, Pill
 } from 'lucide-react';
 
+import PrescriptionEditor from './PrescriptionEditor';
+
 // ─── Type Definitions matching Go backend structs ──────────────────────────
 interface ICECandidateStructure {
     candidate: string;
@@ -137,7 +139,7 @@ export default function ConsultationRoom({
     const [isVideoOff, setIsVideoOff] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
     const [activeTab, setActiveTab] = useState<'workspace' | 'chat'>('workspace');
-
+    const [Editor,setEditor]=useState(false);
     // Chat state
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputValue, setInputValue] = useState('');
@@ -294,36 +296,12 @@ export default function ConsultationRoom({
         };
     }, [connectWS]);
 
-    // const injectDummyReply = useCallback((sentText: string) => {
-    //     const dummy: ChatMessage = {
-    //         sender_id: 'dummy-bot',
-    //         role: userRole === 'doctor' ? 'patient' : 'doctor',
-    //         msg: `[Demo] Got your message: "${sentText}"`,
-    //         id: `${Date.now()}-dummy`,
-    //         timestamp: new Date(),
-    //         isSelf: false,
-    //     };
-    //     setTimeout(() => {
-    //         setMessages(prev => [...prev, dummy]);
-    //     }, 600);
-    // }, [userRole]);
 
     // Send IncomingMsg to server
     const sendMessage = useCallback(() => {
         console.log("@@@@@@@@sendMessage called with inputValue:", inputValue);
         const text = inputValue.trim();
         if (!text) return;
-
-        // Optimistically add own message regardless of WS state
-        // const selfMsg: ChatMessage = {
-        //     sender_id: userId,
-        //     role: userRole,
-        //     msg: text,
-        //     id: `${Date.now()}-self`,
-        //     timestamp: new Date(),
-        //     isSelf: true,
-        // };
-        // setMessages(prev => [...prev, selfMsg]);
         setInputValue('');
         inputRef.current?.focus();
 
@@ -1100,7 +1078,7 @@ export default function ConsultationRoom({
                                         }}>
                                             Clinical actions
                                         </span>
-                                        <button className="clinical-btn primary">
+                                        <button className="clinical-btn primary" onClick={() =>setEditor(true)}>
                                             <Pill size={13} />
                                             Prescribe medication
                                         </button>
@@ -1282,6 +1260,10 @@ export default function ConsultationRoom({
                         )}
                     </div>
                 </div>
+                
+            {Editor && (
+                <PrescriptionEditor onClose={() => setEditor(false)} appointmentId={''} />
+            )}
             </div>
         </>
     );
