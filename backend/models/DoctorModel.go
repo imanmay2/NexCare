@@ -80,7 +80,7 @@ type Prescription struct{
 	Symptoms string ` json:"symptoms" binding:"required" `
 	Physical_Examination string ` json:"physical_examination"  `
 	Drug []Medicine ` json:"drug" binding:"required" `
-	Investigation string ` json:"investigation" `
+	Investigation string ` json:"investigations" `
 	Summary string ` json:"summary" binding:"required" `
 	Follow_Up_Date time.Time ` json:"follow_up_date"  `
 	Status string ` json:"status" binding:"required" `
