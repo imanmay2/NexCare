@@ -14,7 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -181,7 +180,6 @@ func GetPatientMedicalRecords(ctx *gin.Context) {
 		return
 	}
 	ctx.IndentedJSON(200, gin.H{"data": medicalRecord, "Message": "Patient Medical Record Retrieved Successfully", "success": true})
-
 }
 
 func UpdatePatientMedicalRecords(ctx *gin.Context) {
@@ -359,152 +357,184 @@ func DeleteProfilePic(ctx *gin.Context) {
 	})
 }
 
-//FIX ITTTT-- > take appointment id from params
-func FetchAppointmentDetails(ctx *gin.Context){
-	//get request from appointments table
-	appointmentID:=ctx.Param("a_id")
+//fetch the user deatils so that automatically the doctor can see the patient details for the given appointmentId.
+func FetchAppointmentDetails(ctx *gin.Context) { //working
+	appointmentID := ctx.Param("appointmentId")
+	// fmt.Println("Appointment ID from params:", appointmentID); //this is working
 	var p_id string
-	var name,gender string
+	var name, gender string
 	var age int8
-	// userID:=ctx.GetString("userID")
 
-	query1:=` select p_id from appointments where a_id=$1 `
-	row1,err:=conn.DB.Query(context.Background(),query1,appointmentID)
-	if err!=nil{
-		fmt.Printf("Error in fetching appointment details in prescription ")
-		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+	query1 := ` select a.p_id,u.name,u.gender,u.age from appointment a join users u on a.p_id=u.id where a.id=$1 `
+	err := conn.DB.QueryRow(context.Background(), query1, appointmentID).Scan(&p_id, &name, &gender, &age)
+	if err != nil {
+		fmt.Println("Error occcccured in fetching appointment details in prescription")
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
-	row1.Scan(&p_id)
-
-	query2:=` select name,age,gender from users where role=$1 AND id=$2 `
-	row2,err:=conn.DB.Query(context.Background(),query2,"patient",p_id)
-	if err!=nil{
-		fmt.Printf("Error Fetching appintment")
-		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
-		return
-	}
-
-	row2.Scan(&name,&age,&gender)
 	ctx.IndentedJSON(http.StatusOK, gin.H{
 		"Message": "Fetched Successfully",
 		"success": true,
 		"data": model.AppointmentDetails{
-			Id:   appointmentID,
-			P_id: p_id,
-			Name: name,
-			Age:age,
-			Gender:gender,
-		} ,
+			Id:     appointmentID,
+			P_id:   p_id,
+			Name:   name,
+			Age:    age,
+			Gender: gender,
+		},
 	})
-}
-
-func InsertPrescription(ctx *gin.Context,prescription model.Prescription){
-	query:=`insert into consultation values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) `
-	_,err:=conn.DB.Exec(context.Background(),query,uuid.NewString(),time.Now(),prescription.A_id,prescription.Title,prescription.Symptoms,prescription.Diagnosis,prescription.Treatment,prescription.Physical_Examination,prescription.Drug,prescription.Summary,prescription.Follow_Up_Date,prescription.Status,prescription.Finalized_At)
-	if err!=nil{
-		fmt.Printf("Error in inserting prescription data Prescription")
-		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
-		return
-	}
-	fmt.Printf("Prescription Added Successfully")
-	ctx.IndentedJSON(http.StatusCreated,
-		gin.H{"Message":"Prescription Added Successfully","success":true})
-}
-
-func UpdatePrescription(ctx *gin.Context,prescription model.Prescription){ 
-		update_query:=` update consultation set title=$1,symptoms=$2,diagnosis=$3,treatment=$4,physical_examination=$5,drug=$6,investigations=$7,summary=$8,follow_up_date=$9,status=$10,finalizedAt=$11 where id=$12 `
-		_,err:=conn.DB.Exec(context.Background(),update_query,prescription.Title,prescription.Symptoms,prescription.Diagnosis,prescription.Treatment,prescription.Physical_Examination,prescription.Drug,prescription.Investigation,prescription.Summary,prescription.Follow_Up_Date,prescription.Status,prescription.Finalized_At,id)
-		if err!=nil{
-			log.Println("Error occured in Add Prescription")
-			ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
-		}
-		ctx.IndentedJSON(http.StatusCreated,gin.H{"Message":"Draft Saved","success":true})
-		return
 }
 
 // Finalized Prescription --Check if it's finalized then no modification in server
 func AddPrescription(ctx *gin.Context) {
 	var prescription model.Prescription
-	err:=ctx.ShouldBindJSON(&prescription)
-	if err!=nil{
-		fmt.Printf("precrip error1")
-		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+	if err := json.NewDecoder(ctx.Request.Body).Decode(&prescription); err != nil {
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	if strings.TrimSpace(prescription.A_id) == "" {
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": "Appointment ID is required", "success": false})
+		return
+	}
+	if err := validateFinalPrescription(prescription); err != nil {
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
 
-	//check first whether the data exists in the db.
-	var id,status string
-	check_query:=` select id,status from consultation where a_id=$1 `
-	row:=conn.DB.QueryRow(context.Background(),check_query,prescription.A_id)
-	err=row.Scan(&id,&status)
-	if err!=nil{
-		if err==pgx.ErrNoRows{
-			//if no record found then directly insert into DB and mark status into finalized.
-			InsertPrescription(ctx,prescription)
+	finalizedStatus := "Finalized"
+	prescription.Status = &finalizedStatus
+	finalizedAt := time.Now()
+	prescription.Finalized_At = &finalizedAt
+
+	var id, status string
+	checkQuery := `select id,status from consultation where a_id=$1`
+	err := conn.DB.QueryRow(context.Background(), checkQuery, prescription.A_id).Scan(&id, &status)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			util.InsertPrescription(ctx, prescription)
+			return
 		}
-		log.Println("Error found at AddPrescription ",err.Error())
-		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+		log.Println("Error found at AddPrescription:", err)
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
 
-	if status=="Draft"{
-		UpdatePrescription(ctx,prescription)
+	if status != "Draft" {
+		ctx.IndentedJSON(http.StatusForbidden, gin.H{"Message": "Finalized prescriptions cannot be edited", "success": false})
+		return
 	}
-	if status=="Final"{
-		ctx.IndentedJSON(http.StatusForbidden,gin.H{"Message" : "Not Allow to Edit the Final Prescription","success":false})
-	}
+	util.UpdatePrescription(ctx, prescription, id)
 }
 
+func validateFinalPrescription(prescription model.Prescription) error {
+	if strings.TrimSpace(prescription.Title) == "" {
+		return errors.New("Prescription title is required")
+	}
+	if strings.TrimSpace(prescription.Symptoms) == "" {
+		return errors.New("Chief complaint / symptoms are required")
+	}
+	if strings.TrimSpace(prescription.Diagnosis) == "" {
+		return errors.New("Diagnosis is required")
+	}
+	if strings.TrimSpace(prescription.Summary) == "" {
+		return errors.New("Summary is required")
+	}
+	if len(prescription.Drug) == 0 {
+		return errors.New("At least one medicine is required")
+	}
+	for i, medicine := range prescription.Drug {
+		medicineNumber := i + 1
+		if strings.TrimSpace(medicine.Name) == "" {
+			return fmt.Errorf("Medicine name is required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.Dosage) == "" {
+			return fmt.Errorf("Dosage is required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.Frequency) == "" {
+			return fmt.Errorf("Frequency is required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.Duration) == "" {
+			return fmt.Errorf("Duration is required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.DosageUnit) == "" {
+			return fmt.Errorf("Dosage unit is required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.Form) == "" {
+			return fmt.Errorf("Medicine form is required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.DurationUnit) == "" {
+			return fmt.Errorf("Duration unit is required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.FoodInstructions) == "" {
+			return fmt.Errorf("Food instruction is required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.Instructions) == "" {
+			return fmt.Errorf("Instructions are required for Medicine %d", medicineNumber)
+		}
+		if strings.TrimSpace(medicine.Route) == "" {
+			return fmt.Errorf("Route is required for Medicine %d", medicineNumber)
+		}
+	}
+	return nil
+}
 
 //Check for the draft if it exists -- > Update / if not exixts thn insert. Check if it's finalized then no modification in server
-func SaveDraftPrescription(ctx *gin.Context){
+func SaveDraftPrescription(ctx *gin.Context) {
 	var prescription model.Prescription
-	err:=ctx.ShouldBindJSON(&prescription)
-	if err!=nil{
-		log.Println("Error in Save Draft Prescrpi")
-		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+	if err := json.NewDecoder(ctx.Request.Body).Decode(&prescription); err != nil {
+		log.Println("Error in Save Draft Prescription:", err)
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	if strings.TrimSpace(prescription.A_id) == "" {
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"Message": "Appointment ID is required", "success": false})
 		return
 	}
 
-	var a_id,status string
-	
-	//check whether the draft already exists. 
-	check_query:=` select id,status from consultation where a_id=$1 `
-	row:=conn.DB.QueryRow(context.Background(),check_query,prescription.A_id)
-	err=row.Scan(&a_id,&status)
-	if err!=nil{
-		if err==pgx.ErrNoRows{
-			//if no record found then directly insert into DB and mark status into draft.
-			InsertPrescription(ctx,prescription)
-		}
-		log.Println("Error found at Draft Prescription ",err.Error())
-		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+	draftStatus := "Draft"
+	prescription.Status = &draftStatus
+	prescription.Finalized_At = nil
+
+	var id, status string
+	check_query := ` select id,status from consultation where a_id=$1 `
+	err := conn.DB.QueryRow(context.Background(), check_query, prescription.A_id).Scan(&id, &status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		util.InsertPrescription(ctx, prescription)
 		return
-	}else{
-		UpdatePrescription(ctx,prescription)
 	}
+	if err != nil {
+		log.Println("Error found at Draft Prescription:", err)
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": err.Error(), "success": false})
+		return
+	}
+	if status != "Draft" {
+		ctx.IndentedJSON(http.StatusForbidden, gin.H{"Message": "Finalized prescriptions cannot be edited", "success": false})
+		return
+	}
+	util.UpdatePrescription(ctx, prescription, id)
 }
 
-//fetch the data
-func FetchDraftPrescription(ctx *gin.Context){
+//fetch the data --
+func FetchDraftPrescription(ctx *gin.Context) { //working
+	fmt.Println("WELLO")
 	// Get request, get the appointment_id from the params.
 	// search in consultation table.
 	var prescription model.Prescription
-	a_id:=ctx.Param("a_id")
-	q1:=` select a_id,title,symptoms,diagnosis,treatment,physical_examination,drug,investigations,summary,follow_up_date,status,finalizedAt from consultation where a_id=$1 `
-	err:=conn.DB.QueryRow(context.Background(),q1,a_id).Scan(&prescription.A_id,&prescription.Title,&prescription.Symptoms,&prescription.Diagnosis,&prescription.Treatment,&prescription.Physical_Examination,&prescription.Drug,&prescription.Investigation,&prescription.Summary,&prescription.Follow_Up_Date,&prescription.Status,&prescription.Finalized_At)
-	if err!=nil{
-		if err==pgx.ErrNoRows{
+	a_id := ctx.Param("appointmentId")
+	fmt.Println("Appointment ID from params:", a_id) //this is working
+	q1 := ` select a_id,title,symptoms,diagnosis,treatment,physical_examination,drug,investigations,summary,follow_up_date,status,finalized_at from consultation where a_id=$1 `
+	err := conn.DB.QueryRow(context.Background(), q1, a_id).Scan(&prescription.A_id, &prescription.Title, &prescription.Symptoms, &prescription.Diagnosis, &prescription.Treatment, &prescription.Physical_Examination, &prescription.Drug, &prescription.Investigation, &prescription.Summary, &prescription.Follow_Up_Date, &prescription.Status, &prescription.Finalized_At)
+	if err != nil {
+		if err == pgx.ErrNoRows {
 			fmt.Printf("No prescription found for the appointment in Draft")
-			ctx.IndentedJSON(http.StatusNotFound,gin.H{"Message":"No prescription found for the appointment","success":false})
+			ctx.IndentedJSON(http.StatusNotFound, gin.H{"Message": "No prescription found for the appointment", "success": false})
 			return
 		}
 		fmt.Printf("Error in fetching prescription data")
-		ctx.IndentedJSON(http.StatusInternalServerError,gin.H{"Message":err.Error(),"success":false})
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"Message": err.Error(), "success": false})
 		return
 	}
-	//I will get only 1 data from DB or no data. 
+	//I will get only 1 data from DB or no data.
 	// row.Scan(&prescription.A_id,&prescription.Title,&prescription.Symptoms,&prescription.Diagnosis,&prescription.Treatment,&prescription.Physical_Examination,&prescription.Drug,&prescription.Investigation,&prescription.Summary,&prescription.Follow_Up_Date,&prescription.Status,&prescription.Finalized_At)
 	ctx.IndentedJSON(http.StatusOK, gin.H{
 		"Message": "Fetched Successfully",

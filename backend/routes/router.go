@@ -1,9 +1,10 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
-	"nexcare/backend/middleware"
 	controller "nexcare/backend/controllers"
+	"nexcare/backend/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterUserRoutes(router *gin.Engine) {
@@ -48,8 +49,10 @@ func DoctorRoutes(router *gin.Engine) {
 	doctorGroup.POST("/addPatientMedicalRecords", controller.AddPatientMedicalRecords)
 	doctorGroup.PUT("/updatePatientMedicalRecords", controller.UpdatePatientMedicalRecords)
     doctorGroup.POST("/addVitals", controller.AddPatientVitals)
-	doctorGroup.GET("/getPrescription", controller.FetchDraftPrescription)
-	doctorGroup.POST("/addPrescription", controller.AddPrescription)
+	doctorGroup.POST("/saveDraftPrescription/:appointmentId", controller.SaveDraftPrescription)
+    doctorGroup.POST("/addPrescription", controller.AddPrescription)
+    doctorGroup.GET("/getAppointmentDetails/:appointmentId", controller.FetchAppointmentDetails)
+	doctorGroup.GET("/fetchPrescriptionData/:appointmentId", controller.FetchDraftPrescription)
 }
 
 

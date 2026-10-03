@@ -60,37 +60,37 @@ type PatientMedicalRecord struct {
 }
 
 type Medicine struct{
-	Name string ` json:"name" binding:"required" `
-	Dosage string ` json:"dosage" binding:"required" `
-	Frequency string ` json:"frequency" binding:"required" `
-	Duration string ` json:"duration" binding:"required" `
-	DosageUnit string ` json:"dosageUnit" binding:"required" `
-	Form string ` json:"form" binding:"required" `
-	DurationUnit string ` json:"durationUnit" binding:"required" `
-	FoodInstructions string ` json:"foodInstructions" binding:"required" `
-	Instructions string ` json:"instructions" binding:"required" `
+	Name string `json:"medicineName"`
+	Dosage string `json:"dosage"`
+	Frequency string `json:"frequency"`
+	Duration string `json:"duration"`
+	DosageUnit string `json:"dosageUnit"`
+	Form string `json:"form"`
+	DurationUnit string `json:"durationUnit"`
+	FoodInstructions string `json:"foodInstruction"`
+	Instructions string `json:"instructions"`
+	Route string `json:"route"`
 }
 
-
-type Prescription struct{
-	A_id string ` json:"a_id" binding:"required" `
-	Title string ` json:"title" binding:"required" `
-	Diagnosis string ` json:"diagnosis" binding:"required" `
-	Treatment string ` json:"treatment" ` //same as general instruction
-	Symptoms string ` json:"symptoms" binding:"required" `
-	Physical_Examination string ` json:"physical_examination"  `
-	Drug []Medicine ` json:"drug" binding:"required" `
-	Investigation string ` json:"investigations" `
-	Summary string ` json:"summary" binding:"required" `
-	Follow_Up_Date time.Time ` json:"follow_up_date"  `
-	Status string ` json:"status" binding:"required" `
-	Finalized_At time.Time ` json:"finalizedAt"  `
+type Prescription struct {
+	A_id                  string     `json:"a_id"`
+	Title                 string     `json:"title"`
+	Diagnosis             string     `json:"diagnosis"`
+	Treatment             string     `json:"treatment"`
+	Symptoms              string     `json:"symptoms"`
+	Physical_Examination  string     `json:"physical_examination"`
+	Drug                  []Medicine `json:"drug"`
+	Investigation         string     `json:"investigations"`
+	Summary               string     `json:"summary"`
+	Follow_Up_Date        *time.Time `json:"follow_up_date"`
+	Status                *string    `json:"status"`
+	Finalized_At          *time.Time `json:"finalized_at"`
 }
 
 type AppointmentDetails struct{
-	Id string 
-	P_id string 
-	Name string 
-	Age int8 
-	Gender string 
+	Id string ` json:"id" binding:"required" `
+	P_id string ` json:"patientId" binding:"required" `
+	Name string ` json:"name" binding:"required" `
+	Age int8 ` json:"age" binding:"required" `
+	Gender string ` json:"gender" binding:"required" `
 }

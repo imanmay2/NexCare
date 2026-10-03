@@ -1,8 +1,9 @@
 package middleware
 
 import (
+	// "fmt"
 	"nexcare/backend/util"
-
+	"log"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -16,6 +17,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			refreshToken, err1 := ctx.Cookie("refresh_token")
 			if err1 != nil {
 				//refresh token is not found .. redirect it to login
+				log.Println("Refresh Token not found", err1)
 				ctx.IndentedJSON(401, gin.H{"Message": "Refresh Token not found", "success": false})
 				ctx.Abort()
 				return

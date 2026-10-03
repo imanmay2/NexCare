@@ -5,6 +5,8 @@ import {
     FlaskConical, Pill
 } from 'lucide-react';
 
+import axios from 'axios';
+
 import PrescriptionEditor from './PrescriptionEditor';
 
 // ─── Type Definitions matching Go backend structs ──────────────────────────
@@ -50,6 +52,42 @@ interface TwilioICEServer {
 interface ICEServersResponse {
     ice_servers: TwilioICEServer[];
 }
+
+interface PatientInfo {
+    appointmentId: string;
+    name: string;
+    age: number;
+    gender: string;
+    patientId: string;
+}
+
+interface Medicine {
+    medicineName: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
+    dosageUnit: string;
+    form: string;
+    durationUnit: string;
+    foodInstruction: string;
+    instructions: string;
+}
+
+interface Prescription {
+    a_id: string;
+    title: string;
+    diagnosis: string;
+    treatment?: string;
+    symptoms: string;
+    physical_examination?: string;
+    drug: Medicine[];
+    investigations?: string;
+    summary: string;
+    follow_up_date?: string;
+    status: string;
+    finalized_at?: string;
+}
+
 
 // ─── WebSocket URL ──────────────────────────────────────────────────────────
 const WS_BASE_URL = 'ws://localhost:8090/ws/connect';
@@ -149,6 +187,7 @@ export default function ConsultationRoom({
     const inputRef = useRef<HTMLInputElement>(null);
     const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isRemoteVideoAvailable, setIsRemoteVideoAvailable] = useState(false);
+    
 
     // Timer
     useEffect(() => {
@@ -337,7 +376,8 @@ export default function ConsultationRoom({
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const pendingLocalCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
     // const socketRef = useRef<WebSocket | null>(null);
-
+    const [draftPrescription, setDraftPrescription] = useState<Prescription | null>(null);
+    const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null);
 
 
     useEffect(() => {
@@ -375,32 +415,7 @@ export default function ConsultationRoom({
                     localVideoRef.current.srcObject = stream;
                 }
 
-                //create the ICE candidate keys in the browser and send it to the server so that it can be sent to other peer.
-                // //ICE candidates will be triggered automatically by browser. 
-                // peerConnection.onicecandidate = (event) => {
-                //     if (!event.candidate) {
-                //         return;
-                //     }
-
-                //     const socket = wsRef.current;
-                //     if (!socket) {
-                //         console.error("WebSocket is not available");
-                //         return;
-                //     }
-
-                //     socket.send(
-                //         JSON.stringify({
-                //             type: "ice_candidate",
-                //             candidate: {
-                //                 candidate: event.candidate.candidate,
-                //                 sdpMid: event.candidate.sdpMid,
-                //                 sdpMLineIndex: event.candidate.sdpMLineIndex,
-                //                 usernameFragment: event.candidate.usernameFragment,
-                //             },
-                //         })
-                //     );
-                //     console.log("ICE candidate sent:", event.candidate);
-                // };
+                
 
                 peerConnection.onicecandidate = (event) => {
                     if (!event.candidate) {
@@ -489,7 +504,7 @@ export default function ConsultationRoom({
             }
 
         };
-    }, []);
+    }, [appointmentId]);
 
     //function for creating the SDP offer 
     const createOffer = async () => {
@@ -681,6 +696,8 @@ export default function ConsultationRoom({
         }
     };
 
+    
+    
 
     // Attaching stream AFTER <video> is mounted
     useEffect(() => {
@@ -697,6 +714,38 @@ export default function ConsultationRoom({
         });
     }, [isVideoOff]);
 
+
+    useEffect(()=>{
+        const fetchPrescriptionData = async () => {
+            try {
+                const response = await axios.get(
+                    `http://localhost:8090/doctor/fetchPrescriptionData/${appointmentId}`,
+                    { withCredentials: true }
+                );
+                setDraftPrescription(response.data.data);
+            } catch (error) {
+                if (
+                    axios.isAxiosError(error) &&
+                    error.response?.status === 404
+                ) {
+                    setDraftPrescription(null);
+                } else {
+                    console.error("Error fetching prescription:", error);
+                }
+            }
+
+            try {
+                const response = await axios.get(
+                    `http://localhost:8090/doctor/getAppointmentDetails/${appointmentId}`,
+                    { withCredentials: true }
+                );
+                setPatientInfo(response.data.data);
+            } catch (error) {
+                console.error("Error fetching appointment details:", error);
+            }
+        };
+        fetchPrescriptionData();
+    },[appointmentId,Editor]);
 
     //mute and unmute microphone feature.
     const toggleMic = async () => {
@@ -1262,7 +1311,7 @@ export default function ConsultationRoom({
                 </div>
                 
             {Editor && (
-                <PrescriptionEditor onClose={() => setEditor(false)} appointmentId={appointmentId} />
+                <PrescriptionEditor onClose={() => setEditor(false)} appointmentId={appointmentId} doctorName={"Test_Doctor"} patient={patientInfo ?? undefined} initialPrescription={draftPrescription} />
             )}
             </div>
         </>

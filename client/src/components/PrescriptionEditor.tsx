@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import {
     X,
     Pill,
@@ -25,6 +26,7 @@ interface PrescriptionEditorProps {
     appointmentId: string;
     doctorName?: string;
     patient?: PatientInfo;
+    initialPrescription?: PrescriptionInitialData | null;
     onClose: () => void;
 }
 
@@ -46,16 +48,30 @@ type PrescriptionStatus = 'DRAFT' | 'FINALIZED';
 
 interface PrescriptionPayload {
     a_id: string;
+    status: 'Draft' | 'Finalized';
     title: string;
     symptoms: string;
     diagnosis: string;
     treatment: string; //treatment is same as general instruction
     physical_examination: string;
-    drug: Medicine[];
-    investigation: string;
+    drug: Omit<Medicine, 'id'>[];
+    investigations: string;
     summary: string;
-    follow_up_date?: Date | string;
+    follow_up_date?: string;
 
+}
+
+interface PrescriptionInitialData {
+    status?: string;
+    title?: string;
+    symptoms?: string;
+    diagnosis?: string;
+    treatment?: string;
+    physical_examination?: string;
+    drug?: Omit<Medicine, 'id'>[];
+    investigations?: string;
+    summary?: string;
+    follow_up_date?: string;
 }
 
 const createMedicine = (): Medicine => ({
@@ -122,6 +138,7 @@ export default function PrescriptionEditor({
     appointmentId,
     doctorName = 'Doctor',
     patient,
+    initialPrescription,
     onClose,
 }: PrescriptionEditorProps) {
     // ─────────────────────────────────────────────
@@ -169,6 +186,41 @@ export default function PrescriptionEditor({
 
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        if (!initialPrescription) {
+            return;
+        }
+
+        setTitle(initialPrescription.title ?? '');
+        setChiefComplaint(initialPrescription.symptoms ?? '');
+        setDiagnosis(initialPrescription.diagnosis ?? '');
+        setClinicalNotes(initialPrescription.physical_examination ?? '');
+        setGeneralInstructions(initialPrescription.treatment ?? '');
+        setInvestigation(initialPrescription.investigations ?? '');
+        setFollowUpDate(
+            initialPrescription.follow_up_date?.slice(0, 10) ?? ''
+        );
+        setSummary(initialPrescription.summary ?? '');
+        setMedicines(
+            initialPrescription.drug?.length
+                ? initialPrescription.drug.map((medicine) => ({
+                      ...medicine,
+                      id:
+                          typeof crypto !== 'undefined' && crypto.randomUUID
+                              ? crypto.randomUUID()
+                              : `${Date.now()}-${Math.random()}`,
+                  }))
+                : [createMedicine()]
+        );
+        setStatus(
+            ['FINALIZED', 'FINAL'].includes(
+                initialPrescription.status?.toUpperCase() ?? ''
+            )
+                ? 'FINALIZED'
+                : 'DRAFT'
+        );
+    }, [initialPrescription]);
 
     // ─────────────────────────────────────────────
     // Consultation date
@@ -223,113 +275,43 @@ export default function PrescriptionEditor({
     };
 
     // ─────────────────────────────────────────────
-    // Convert medicine objects → DB drug field
+    // Remove editor-only IDs before sending medicines to the API.
     // ─────────────────────────────────────────────
 
-    const buildDrugString = () => {
-        return medicines;
-        // return medicines
-        //     .filter((medicine) => medicine.medicineName.trim())
-        //     .map((medicine, index) => {
-        //         const parts: string[] = [];
-
-        //         parts.push(
-        //             `${index + 1}. ${medicine.medicineName.trim()}`
-        //         );
-
-        //         if (medicine.dosage.trim()) {
-        //             parts.push(
-        //                 `Dosage: ${medicine.dosage.trim()} ${medicine.dosageUnit}`
-        //             );
-        //         }
-
-        //         if (medicine.form) {
-        //             parts.push(`Form: ${medicine.form}`);
-        //         }
-
-        //         if (medicine.route) {
-        //             parts.push(`Route: ${medicine.route}`);
-        //         }
-
-        //         if (medicine.frequency) {
-        //             parts.push(
-        //                 `Frequency: ${medicine.frequency}`
-        //             );
-        //         }
-
-        //         if (medicine.duration.trim()) {
-        //             parts.push(
-        //                 `Duration: ${medicine.duration.trim()} ${medicine.durationUnit}`
-        //             );
-        //         }
-
-        //         if (medicine.foodInstruction) {
-        //             parts.push(
-        //                 `Food: ${medicine.foodInstruction}`
-        //             );
-        //         }
-
-        //         if (medicine.instructions.trim()) {
-        //             parts.push(
-        //                 `Instructions: ${medicine.instructions.trim()}`
-        //             );
-        //         }
-
-        //         return parts.join(' | ');
-        //     })
-        //     .join('\n');
+    const buildDrugPayload = (): Omit<Medicine, 'id'>[] => {
+        return medicines.map((medicine) => ({
+            medicineName: medicine.medicineName,
+            dosage: medicine.dosage,
+            dosageUnit: medicine.dosageUnit,
+            form: medicine.form,
+            route: medicine.route,
+            frequency: medicine.frequency,
+            duration: medicine.duration,
+            durationUnit: medicine.durationUnit,
+            foodInstruction: medicine.foodInstruction,
+            instructions: medicine.instructions,
+        }));
     };
 
     // ─────────────────────────────────────────────
-    // Build payload matching current DB
+    // Build the API payload for the consultation record.
     // ─────────────────────────────────────────────
 
     const buildPayload = (): PrescriptionPayload => {
-        /*
-         * Current DB:
-         *
-         * created_at
-         * a_id
-         * title
-         * symptoms
-         * diagnosis
-         * treatment (kept empty; treatment UI removed)
-         * physical_examination
-         * drug
-         * investigation
-         * summary
-         *follow_up_date
-         *
-         * generalInstructions and followUpDate are currently
-         * UI-only because your current DB does not have
-         * corresponding columns.
-         */
-
-        // const combinedTreatment = [
-        //     treatment.trim()
-        //         ? `Treatment:\n${treatment.trim()}`
-        //         : '',
-        //     generalInstructions.trim()
-        //         ? `General Instructions:\n${generalInstructions.trim()}`
-        //         : '',
-        //     followUpDate
-        //         ? `Follow-up Date: ${followUpDate}`
-        //         : '',
-        // ]
-        //     .filter(Boolean)
-        //     .join('\n\n');
-
         return {
             a_id: appointmentId,
+            status: 'Draft',
             title: title.trim(),
             symptoms: chiefComplaint.trim(),
             diagnosis: diagnosis.trim(),
             treatment: generalInstructions.trim(),
             physical_examination: clinicalNotes.trim(),
-            drug: buildDrugString(),
-            investigation: investigation.trim(),
+            drug: buildDrugPayload(),
+            investigations: investigation.trim(),
             summary: summary.trim(),
-            follow_up_date: followUpDate,
+            follow_up_date: followUpDate
+                ? new Date(`${followUpDate}T00:00:00.000Z`).toISOString()
+                : undefined,
         };
     };
 
@@ -354,30 +336,33 @@ export default function PrescriptionEditor({
             setError('Diagnosis is required.');
             return false;
         }
+        if (!summary.trim()) {
+            setError('Summary is required.');
+            return false;
+        }
 
         for (let i = 0; i < medicines.length; i++) {
             const medicine = medicines[i];
 
-            if (!medicine.medicineName.trim()) {
-                setError(
-                    `Medicine name is required for Medicine ${i + 1
-                    }.`
-                );
-                return false;
-            }
+            const requiredMedicineFields: Array<[string, string]> = [
+                ['Medicine name', medicine.medicineName],
+                ['Dosage', medicine.dosage],
+                ['Frequency', medicine.frequency],
+                ['Duration', medicine.duration],
+                ['Dosage unit', medicine.dosageUnit],
+                ['Medicine form', medicine.form],
+                ['Duration unit', medicine.durationUnit],
+                ['Food instruction', medicine.foodInstruction],
+                ['Instructions', medicine.instructions],
+                ['Route', medicine.route],
+            ];
+            const missingField = requiredMedicineFields.find(
+                ([, value]) => !value.trim()
+            );
 
-            if (!medicine.dosage.trim()) {
+            if (missingField) {
                 setError(
-                    `Dosage is required for Medicine ${i + 1
-                    }.`
-                );
-                return false;
-            }
-
-            if (!medicine.duration.trim()) {
-                setError(
-                    `Duration is required for Medicine ${i + 1
-                    }.`
+                    `${missingField[0]} is required for Medicine ${i + 1}.`
                 );
                 return false;
             }
@@ -391,28 +376,39 @@ export default function PrescriptionEditor({
     // Save draft
     // ─────────────────────────────────────────────
 
-    const handleSaveDraft = () => {
+    const handleSaveDraft = async () => {
         setError('');
 
         const payload = buildPayload();
+        setMessage('');
 
-        //call the add prescription API here to save the draft in the backend.
-
-        console.log('Prescription draft:', {
-            ...payload,
-            status: 'DRAFT',
-            patient,
-            doctorName,
-        });
-        setStatus('DRAFT');
-        setMessage('Prescription draft prepared successfully.');
+        try {
+            const response = await axios.post(
+                `http://localhost:8090/doctor/saveDraftPrescription/${appointmentId}`,
+                payload,
+                { withCredentials: true }
+            );
+            console.log('Draft prescription saved:', response.data);
+            setStatus('DRAFT');
+            setMessage('Prescription draft saved successfully.');
+        } catch (error) {
+            console.error('Error saving prescription draft:', error);
+            if (axios.isAxiosError(error)) {
+                setError(
+                    error.response?.data?.Message ??
+                        error.message
+                );
+            } else {
+                setError('Unable to save prescription draft.');
+            }
+        }
     };
 
     // ─────────────────────────────────────────────
     // Finalize
     // ─────────────────────────────────────────────
 
-    const handleFinalize = () => {
+    const handleFinalize = async () => {
         if (!validatePrescription()) {
             return;
         }
@@ -426,21 +422,30 @@ export default function PrescriptionEditor({
         }
 
         const payload = buildPayload();
-        //Call the Add Prescription API here for the finalized prescription to be saved in the backend.
+        payload.status = 'Finalized';
+        setError('');
+        setMessage('');
 
-        console.log('Prescription finalized:', {
-            ...payload,
-            status: 'FINALIZED',
-            patient,
-            doctorName,
-            finalizedAt: new Date().toISOString(),
-        });
-
-        setStatus('FINALIZED');
-
-        setMessage(
-            'Prescription finalized successfully.'
-        );
+        try {
+            const response = await axios.post(
+                'http://localhost:8090/doctor/addPrescription',
+                payload,
+                { withCredentials: true }
+            );
+            console.log('Prescription finalized:', response.data);
+            setStatus('FINALIZED');
+            setMessage('Prescription finalized successfully.');
+        } catch (error) {
+            console.error('Error finalizing prescription:', error);
+            if (axios.isAxiosError(error)) {
+                setError(
+                    error.response?.data?.Message ??
+                        error.message
+                );
+            } else {
+                setError('Unable to finalize prescription.');
+            }
+        }
     };
 
     const isFinalized = status === 'FINALIZED';
